@@ -18,6 +18,7 @@ import pygame
 import pygame.image
 import pygame.draw
 import pygame.transform
+import pygame.font
 
 
 #####################
@@ -403,12 +404,13 @@ class PickUpArea:
             surface.blit(card_surface, self._rect.topleft)
 
 class Deck:
-    def __init__(self, pos, size, card_imgs, deck_img):
+    def __init__(self, pos, size, card_imgs, deck_img, font):
         """
         pos ... (x, y) coordinates
         size ... (x, y) coordinates
         card_imgs ... 2d list mapping (color, rank) to pygame image objects
         deck_img ... pygame image object representing the deck
+        font ... font with which to display the remaining number of cards
 
         Fill the deck with cards and shuffle it
         """
@@ -424,9 +426,25 @@ class Deck:
                 self._cards.append(Card(color, rank, img))
         shuffle(self._cards)
 
+        self._font = font
+        self._text_surface = None
+        self._update_text()
+
+    def _update_text(self):
+        """
+        Update the surface displaying the number of remaining cards
+        """
+        self._text_surface = self._font.render(
+            str(len(self._cards)), 
+            False,
+            TEXT_COLOR
+        )
+
     def pop(self):
         if self._cards:
-            return self._cards.pop()
+            card = self._cards.pop()
+            self._update_text()
+            return card
         else:
             return None
 
@@ -435,6 +453,60 @@ class Deck:
             surface.blit(self._surface, self._rect.topleft)
         else:
             pygame.draw.rect(surface, FG_COLOR, self._rect)
+        surface.blit(self._text_surface, self._rect.topleft)
+
+    def collidepoint(self, pos):
+        return self._rect.collidepoint(pos)
+
+class EndTurnButton:
+    def __init__(self, pos, size, font):
+        self._rect = pygame.Rect(pos, size)
+        self._font = font
+
+        self._active = False
+        self._player = 1
+
+        self._text_surface1 = None
+        self._text_surface2 = None
+        self._update_text()
+
+    def _update_text(self):
+        text1 = f"Hraje hrac {self._player}"
+        text2 = "Predat tah" if self._active else ""
+        self._text_surface1 = self._font.render(
+            text1,
+            False,
+            TEXT_COLOR
+        )
+        self._text_surface2 = self._font.render(
+            text2,
+            False,
+            TEXT_COLOR
+        )
+
+    def activate(self):
+        self._active = True
+        self._update_text()
+
+    def deactivate(self):
+        self._active = False
+        self._update_text()
+
+    def set_player(self, player):
+        self._player = player
+        self._update_text()
+
+    def draw(self, surface):
+        color = FG_COLOR if self._active else BG_COLOR
+        pygame.draw.rect(surface, color, self._rect)
+        surface.blit(
+                self._text_surface1,
+                (self._rect.x, self._rect.y)
+        )
+        surface.blit(
+                self._text_surface2,
+                (self._rect.x, self._rect.y + self._text_surface1.get_height())
+        )
 
     def collidepoint(self, pos):
         return self._rect.collidepoint(pos)
@@ -447,19 +519,20 @@ class Deck:
 BG_COLOR = "0x005500"
 FG_COLOR = "0x227722"
 ERR_COLOR = "0x772222"
+TEXT_COLOR = "0x000000"
 SCREEN_SIZE = (1440, 900)
 FPS = 30
 COLORS = ("heart", "clover", "spade", "diamond")
 SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
-#CARD_SIZE = (150, 200)
-#STACK_SIZE = (150, 200 + 32 * 
-#HAND_SIZE = (150 * 8, 200)
 ROWS_OF_STACKS = 1
 COLUMNS_OF_STACKS = 8
 HAND_PX_HEIGHT = 160
 STACK_PX_MARGINS = 16
 CARD_HEIGHT_WIDTH_RATIO = 4. / 3
+STARTING_HAND_NUM_CARDS = 7
+FONT_NAME = "arial"
+FONT_SIZE = 30
 
 
 #########
@@ -482,6 +555,9 @@ for color in COLORS:
 missing_img = pygame.image.load("karta.png") # TODO
 
 missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
+
+# Setup font
+font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
 
 # Setup board
 pickup_width = HAND_PX_HEIGHT * 3 / 4
@@ -509,7 +585,7 @@ stack_width = (SCREEN_SIZE[0] - (COLUMNS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
 stack_height = (SCREEN_SIZE[1] - HAND_PX_HEIGHT * 2 - \
                 (ROWS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
                 ROWS_OF_STACKS
-
+# The middle of the board
 stacks = []
 for col in range(COLUMNS_OF_STACKS - 1): # The -1 is to make space for the deck
     for row in range(ROWS_OF_STACKS):
@@ -518,7 +594,7 @@ for col in range(COLUMNS_OF_STACKS - 1): # The -1 is to make space for the deck
         stacks.append(Stack((x, y), (stack_width, stack_height)))
 
 deck_width = stack_width
-deck_height = stack_width / 3 * 4
+deck_height = stack_width * CARD_HEIGHT_WIDTH_RATIO
 deck_x = (COLUMNS_OF_STACKS - 1) * deck_width + \
         COLUMNS_OF_STACKS * STACK_PX_MARGINS
 deck_y = (SCREEN_SIZE[1] - deck_height) / 2 # Center
@@ -526,31 +602,30 @@ deck = Deck(
         (deck_x, deck_y),
         (deck_width, deck_height),
         card_imgs,
-        deck_img
+        deck_img,
+        font
+)
+button_width = stack_width
+button_height = (stack_height - deck_height) / 2 - STACK_PX_MARGINS
+button_x = deck_x
+button_y = deck_y + deck_height + STACK_PX_MARGINS
+end_turn_button = EndTurnButton(
+        (button_x, button_y),
+        (button_width, button_height),
+        font
 )
 
+# Put starting cards into players' hands
+for i in range(STARTING_HAND_NUM_CARDS):
+    card = deck.pop()
+    hand1.add(card)
+    card = deck.pop()
+    hand2.add(card)
+
 # DEBUG
-stacks[0].add(Card("heart", "Q", card_imgs["heart"]["Q"]))
-stacks[0].add(Card("clover", "3", card_imgs["clover"]["3"]))
-
-stacks[2].add(Card("diamond", "K", card_imgs["diamond"]["K"]))
-stacks[2].add(Card("spade", "K", card_imgs["spade"]["K"]))
-stacks[2].add(Card("clover", "K", card_imgs["clover"]["K"]))
-
-stacks[3].add(Card("spade", "A", card_imgs["spade"]["A"]))
-stacks[3].add(Card("spade", "2", card_imgs["spade"]["2"]))
-stacks[3].add(Card("spade", "3", card_imgs["spade"]["3"]))
-stacks[3].add(Card("spade", "4", card_imgs["spade"]["4"]))
-
-stacks[5].add(Card("heart", "A", card_imgs["heart"]["A"]))
-stacks[5].add(Card("heart", "2", card_imgs["heart"]["2"]))
-stacks[5].add(Card("heart", "3", card_imgs["heart"]["3"]))
-stacks[5].add(Card("heart", "5", card_imgs["heart"]["5"]))
-
-stacks[6].add(Card("diamond", "A", card_imgs["diamond"]["A"]))
-
-hand1.add(Card("diamond", "A", card_imgs["diamond"]["A"]))
-hand1.add(Card("clover", "5", card_imgs["clover"]["5"]))
+#stacks[0].add(Card("heart", "Q", card_imgs["heart"]["Q"]))
+#hand1.add(Card("clover", "5", card_imgs["clover"]["5"]))
+end_turn_button.activate()
 
 
 #############
@@ -611,6 +686,7 @@ while True:
     for stack in stacks:
         stack.draw(screen)
     deck.draw(screen)
+    end_turn_button.draw(screen)
 
     pygame.display.flip()
     clock.tick(FPS)

@@ -142,6 +142,11 @@ momentálně řeším:
 - Bug: Do stacku lze přidat více než 13 karet
 
 
+24/04/22
+
+-
+
+
 Todo list (speedrun k tomu, aby se hra dala hrát):
 x Přesouvání karet mezi stacky
   x Karta vypíše, co je, když se na ni klikne
@@ -150,18 +155,22 @@ x Přesouvání karet mezi rukou a stacky
   x Zobrazování karet v ruce
   x Picking up z ruky
 x Lízání karet
-- Začátek hry: Rozdání prvních n karet
-- Vypisování počtu karet v balíčku
+x Začátek hry: Rozdání prvních n karet
+x Vypisování počtu karet v balíčku
+
+- Střídání tahů
+- Kontrolování, že herní plocha je při předání tahu v poho
+- Střídání tahů i jinak, než s líznutím
 - Konec hry
 
+- Vracení do ruky a lízání jediným kliknutím
 - Zamezení vrácení do ruky karet, které začaly tah na stole
-- Ukončení tahu
-- Střídání tahů
-- Jenom karty přesunuté v tomhle kole mohu vracet do ruky
+  - A označení těch, které do ruky vrátit lze (hvězdička?, zesvětlení karty?)
 - Co když...
   - Ruka bude příliš plná
   - Stacků bude moc
 - Na kartách ve stacku není na všech vidět hodnost
+- Zakázání přesouvání karet pohybem kolečka myši
 
 PRVNÍ VERZE:
 - Obdélníkové stacky a karty
