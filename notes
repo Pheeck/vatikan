@@ -1,0 +1,182 @@
+23/08/05
+
+- Každý stack může mít vyhrazený prostor. Kolizi s myší řeším nejdřív na úrovni
+  stacků, pak na úrovni karet.
+- UI invarianty:
+  - Poměr stran karet je vždy 3:4
+  - Vertikální 1/5 karty je ve stacku vždy vidět
+  - Horizontální 1/3 karty je v ruce vždy vidět
+  - Stacky a ruce se nepřekrývají
+
+
+23/08/06
+
+- Šlo by pro další verzi streamlinovat, jestli používám tuply nebo zvlášť width
+  a height?
+
+
+23/09/08
+
+- Konec kola: V jednom balíčku nebude stejná karta 2x
+- Chci udržovat karty v sorted pořadí?
+- TODO: Fuck, tam jsou ještě žolíci
+
+
+23/09/20
+
+ALG "Ověřování cyklické contiguous posloupnosti"
+
+VSTUP: Seřazená posloupnost hodností karet, aspoň 3 karty
+VÝSTUP: Je posloupnost cyklicky contiguous
+- Skenujeme zleva doprava
+- Pokud začínáme mezerou, A = 1, jinak A = 0
+- Počítáme mezery
+- Došli jsme do konce seznamu
+  - Pokud končíme mezerou a začali jsme mezerou nezapočítáme ji znovu
+  - Vrátíme #mezer <= 1
+
+
+DŮKAZ ... žádné false negatives
+
+- Mějme cyklicky contiguous posloupnost P
+- Rozpadneme se na případy
+1) xxxx..... ... ok
+2) ...xxxx.. ... ok
+3) ......xxx ... ok
+4) xxx....xx ... ok
+   xxxxxxxxx ... triviální
+
+
+DŮKAZ ... žádné false positives
+
+- Mějme posloupnost, není cyclic contiguous
+- Mějme mezeru
+- Rozpadněme se na případy, kde ta mezera může být (musí být ohraničená karami,
+  jinak by posloupnost byla prázdná)
+1) Na začátku
+   .....x????
+2) Na konci
+   ????x.....
+3) Ani na začátku ani na konci
+   ??x...x???
+4) Na začátku i na konci
+   ....x???x...
+
+- Nikdy do balíčku nesmíš vložit víc než 2 žolíky?
+  - Pro hráče to není užitečné
+  - (V dvoubalíčku jsou 4 žolící)
+  - Ale hej, to je 9295 cyklů 'is_cyclic_sequence' max, to stejně hru nezamrzne
+    nijak zvlášť moc
+
+- Skončil jsem u 'is_cyclic_sequence_j'
+  - Teď by se mi hodilo mít seznam i s mezerami
+
+
+23/09/23
+
+2 3 4 5 6 7 8 9 10 J Q K A
+x . x . . . x . .  x x x x
+
+Stačí plnit od nejmenší mezery?
+Ano. Můžeme ignorovat největší mezeru. Zbytek *musíme* vyplnit.
+Takže tenhle způsob je korektní.
+Navíc uživatel se bude lépe orientovat v malém počtu velkých mezer, než velkém
+malých.
+
+- Během kola hráč bude vědět, jestli jsou stacky nevalidní díky missing cards
+- Na konci kola se hra prostě zeptá všech stacků, jestli neobsahují missing
+  cards
+
+- Moc se mi nelíbí mít "cards" a "cards with missing"
+- Bylo by fajn mít kratší název pro 'contiguous cyclic sequence'
+
+
+23/09/25
+
+- "flush" a "triplet"
+- TODO: Co když přidám žolíka někam, kde už není místo?
+  - Budou "attempt_construct" funkce vrace False?
+
+
+24/02/29
+
+Beru si tohle jako školní projekt, zatím škrtám žolíky
+- Budu muset nějak vyznačit, že s balíčkem jsou i jiné problémy, než jen gaps
+  (různé barvy / různé ranky)
+  - Prozatím může nevalidní balíček mít zvýrazněné pozadí
+
+
+24/03/02
+
+Pozorování:
+- Stack lze vždy zrotovat tak, že největší gap bude vnější
+  - Možná se mi bude hodit na zjednodušení logiky při redesignu
+
+https://yaomon.itch.io/playing-cards
+
+- Bude to chtít nějaký invariant na to, aby vždy byla vidět aspoň část stacku,
+  jinak nebude vidět, jestli je validní nebo ne
+- Budu asi chtít flush zrotovat tak, aby biggest gap byl vnější
+- Bylo by čistější spočítat card height jednou na začátku hry
+
+momentálně řeším:
+- když odeberu poslední kartu ze stacku, zůstane tam vykreslená
+  - asi zůstala v "cards with missing"
+- 2 gaps se vykreslíš špatně
+
+
+24/03/19
+
+- Stack, Hand: Možná přepočítat pozice karet v nějaké update_card_positions
+  metodě a prostě udržovat card positions a draw je jenom hloupě projde a
+  vykreslí dle nich cards
+
+
+24/03/25
+
+-
+
+
+24/04/20
+
+- Bug: Do stacku lze přidat více než 13 karet
+
+
+Todo list (speedrun k tomu, aby se hra dala hrát):
+x Přesouvání karet mezi stacky
+  x Karta vypíše, co je, když se na ni klikne
+  x Zobrazení picked up karty
+x Přesouvání karet mezi rukou a stacky
+  x Zobrazování karet v ruce
+  x Picking up z ruky
+x Lízání karet
+- Začátek hry: Rozdání prvních n karet
+- Vypisování počtu karet v balíčku
+- Konec hry
+
+- Zamezení vrácení do ruky karet, které začaly tah na stole
+- Ukončení tahu
+- Střídání tahů
+- Jenom karty přesunuté v tomhle kole mohu vracet do ruky
+- Co když...
+  - Ruka bude příliš plná
+  - Stacků bude moc
+- Na kartách ve stacku není na všech vidět hodnost
+
+PRVNÍ VERZE:
+- Obdélníkové stacky a karty
+- Vidím oboum hráčům do rukou
+- Bude omezený počet stacků dle velikosti obrazovky
+- 2 hráči
+- Žádní žolíci
+
+DALŠÍ VERZE:
+- Scaling obrazovky dle počtu stacků?
+- Rotující stacky?
+- Volné přemisťování stacků?
+- Oddělit logiku a vykreslování?
+- Možnost srovnat si libovolně ruku?
+- Určitě reprezentovat ranky pouze číselně (jediné, na co potřebuji ranky, je
+  načítání obrázků, jinak je to cyklická grupa 13ti prvků)
+- Rozmyslet lépe gaps (možná uzavřené intervaly?)
+- Žolíci

@@ -1,0 +1,362 @@
+#!/usr/bin/env python3
+
+"""
+A prototype PyGame implementation of the card game 'Vatikán'.
+
+Note: What do we mean by "cyclic order" mentioned in code comments?
+In cyclic order we treat the highest card rank as a predecessor of the lowest
+card rank. So K is the predecessor of A and A is the predecessort of 2.
+"""
+
+import pygame
+import pygame.image
+import pygame.draw
+import pygame.transform
+
+
+#####################
+# UTILITY FUNCTIONS #
+#####################
+
+def get_missing_card(rank):
+    """
+    Return a fake 'missing' card of given rank.
+    """
+    return Card(SPECIAL_COLOR, rank, missing_img)
+
+def get_joker_card(rank):
+    """
+    Return a fake joker card of given rank.
+    """
+    return Card(SPECIAL_COLOR, rank, joker_img)
+
+def prev_rank(rank):
+    """
+    Return the card rank preceeding the given rank (this is cyclic)
+    """
+    return RANKS[rank_indices[rank] - 1]
+
+def gap_between(card1, card2):
+    """
+    Returns a pair (tuple) of indices. The tuple represents an interval (a, b)
+    of ranks between ranks of card1 and card2 (including card1.rank and
+    card2.rank)
+    """
+    return (rank_indices[card1.rank], rank_indices[card2.rank])
+
+def sorted_by_rank(cards):
+    """
+    Return the given list of cards (class Card) sorted by rank
+    """
+    return sorted(cards, key=lambda x: rank_indices(x.rank))
+
+def is_cyclic_sequence(cards):
+    """
+    Do ranks of given cards (class Card) form a gapless cyclic sequence? Do not
+    consider colors.
+
+    A list of at least 3 cards must be given. It mustn't contain multiple cards
+    of the same rank.
+    """
+    cards = sorted_by_rank(cards)
+
+    # See 'notes' for ALG
+
+    gap_start = cards[0].rank != RANKS[0]
+    prev_card = None
+    gap_count = 0
+    for card in cards:
+        if prev_card is None:
+            found_gap = gap_start
+        else:
+            found_gap = prev_card.rank == prev_rank(card.rank)
+
+        if found_gap:
+            gap_count += 1
+        prev_card = card
+
+    gap_end = cards[-1].rank != RANKS[-1]
+    if gap_start and gap_end:
+        gap_count -= 1
+
+    return gap_count < 2
+
+def compute_gaps(cards):
+    """
+    Return the list of (cylic) gaps in a given list of cards. Gaps are
+    represented as pairs (tuples) of indices. Each pair represents an interval
+    of missing ranks (a, b) where a and b are the existing cards at the borders
+    of the gap (the gap excludes a, b).
+
+    A list of at least 3 cards must be given. It mustn't contain multiple cards
+    of the same rank.
+    """
+    gaps = []
+    cards = sorted_by_rank(cards)
+
+    gap_start = cards[0].rank != RANKS[0]
+    for i in range(len(cards)):
+        card = cards[i]
+        prev_card = cards[i - 1] # Can be -1
+        found_gap = prev_card.rank == prev_rank(card.rank)
+        if found_gap:
+            gaps.append(gap_between(prev_card, card))
+
+    return gaps
+
+def attempt_construct_flush(cards, joker_count):
+    """
+    Return a sorted list of cards with jokers up to 'joker_count' added in a
+    way that minimizes steps (a step is adding a card) needed to make the cards
+    into a contiguous sequence. Add fake 'missing cards' representing these
+    steps.
+
+    Multiple ways to do this may be possible. The implementation may pick any
+    of them.
+    """
+    assert joker_count >= 0
+
+    result = cards.copy()
+
+    gaps = compute_gaps(result)
+    gaps = sorted(gaps, lambda x, y: abs(y - x)) # Sort gaps by size
+    gaps = gaps[:-1] # Yeet the biggest gap
+
+    # Add jokers and missing card markers
+    for x, y in gaps:
+        assert x - y >= 2
+        for i in range(x + 1, y):
+            if joker_count:
+                result.append(get_joker_card(RANKS[i]))
+                joker_count -= 1
+            else:
+                result.append(get_missing_card(RANKS[i]))
+
+    result = sorted_by_rank(result)
+    return result
+
+def attempt_construct_triplet(cards, joker_count):
+    """
+    Return a list of at least 3 cards. Use all given cards and the given number
+    of jokers. If the given cards and jokers don't suffice, add missing card
+    markers.
+    """
+    assert joker_count >= 0
+
+    result = cards.copy()
+
+    while joker_count:
+        result.append(get_joker_card(RANKS[0])) # Rank doesn't matter
+        joker_count -= 1
+
+    while len(result) < 3:
+        result.append(get_missing_card(RANKS[0])) # Rank doesn't matter
+
+    return result
+
+
+###########
+# CLASSES #
+###########
+
+class Card:
+    def __init__(self, color, rank, img):
+        self.color = color
+        self.rank = rank
+        self.img = img
+
+class Stack:
+    def __init__(self, pos, size):
+        """
+        pos ... (x, y) coordinates
+        size ... (x, y) coordinates
+        """
+        self._rect = pygame.Rect(pos, size)
+        self._cards = [] # Contains just cards, no jokers and missing markers
+        self._cards_with_missing = [] # Sorted cards, jokers and missing
+        self._is_valid = True
+
+    def add(self, card):
+        """
+        Add a card into the stack.
+        """
+        # TODO
+        pass
+
+    def remove(self, color, rank):
+        """
+        Remove a card of given color and rank and return the card. If stack
+        doesn't contain any card of given color and rank, return None.
+
+        If there are two cards of the given color and rank present in the
+        stack, remove any of the two.
+        """
+        # TODO
+        return None
+
+    def reconstruct(self):
+        pass
+
+    def is_valid(self):
+        """
+        Is this a valid stack at the end of the round?
+
+        Rules:
+        - The stack must have at least 3 cards
+        - Its cards must be either all of the same rank or be of the same color
+          and form a gapless (cyclic) sequence of ranks
+        - There mustn't be two cards of the same color and rank
+        """
+        if len(_cards) < 3:
+            return False
+
+        same_rank = True
+        rank = _cards[0].rank
+        for card in _cards:
+            if card.rank != rank:
+                same_rank = False
+                break
+        if same_rank:
+            return True
+
+        same_color = True
+        color = _cards[0].color
+        for card in _cards:
+            if card.color != color:
+                same_color = False
+                break
+        if same_color:
+            return is_cyclic_sequence(_cards)
+        else:
+            return False
+
+    def rearrange(self):
+        """
+        Order the cards in the stack so that
+        - Their ranks are in a correct (cyclic) order
+        - The gaps between the cards are the smallest possible
+        """
+        pass
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, FG_COLOR, self._rect)
+
+class Hand:
+    def __init__(self, pos, size):
+        """
+        pos ... (x, y) coordinates
+        size ... (x, y) coordinates
+        """
+        self.rect = pygame.Rect(pos, size)
+        self.cards = []
+        self.card_surfaces = []
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, FG_COLOR, self.rect)
+
+
+#############
+# CONSTANTS #
+#############
+
+BG_COLOR = "0x005500"
+FG_COLOR = "0x227722"
+SCREEN_SIZE = (1440, 900)
+FPS = 60
+COLORS = ("hearts", "clubs", "spades", "diamonds")
+SPECIAL_COLOR = "special" # For missing cards and jokers
+RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
+#CARD_SIZE = (150, 200)
+#STACK_SIZE = (150, 200 + 32 * 
+#HAND_SIZE = (150 * 8, 200)
+ROWS_OF_STACKS = 2
+COLUMNS_OF_STACKS = 8
+HAND_PX_HEIGHT = 160
+STACK_PX_MARGINS = 16
+
+
+#########
+# SETUP #
+#########
+
+rank_indices = {}
+for i, rank in enumerate(RANKS):
+    rank_indices[rank] = i
+
+pygame.init()
+screen = pygame.display.set_mode(SCREEN_SIZE)
+deck_img = pygame.image.load("karta.png") # TODO
+
+# Load card images
+# A card image name should be a concatenation of its color and value .png
+# (heartsQ.png, clubs5.png, ...)
+card_imgs = {}
+for color in COLORS:
+    card_imgs[color] = {}
+    for rank in RANKS:
+        #card_imgs[color][rank] = pygame.image.load(color + rank + ".png")
+        card_imgs[color][rank] = pygame.image.load("karta.png") # TODO
+missing_img = pygame.image.load("karta.png") # TODO
+joker_img = pygame.image.load("karta.png") # TODO
+
+# Setup board
+hand1 = Hand( # The bottom player
+        (0, SCREEN_SIZE[1] - HAND_PX_HEIGHT),
+        (SCREEN_SIZE[0], HAND_PX_HEIGHT)
+)
+hand2 = Hand( # The top player
+        (0, 0),
+        (SCREEN_SIZE[0], HAND_PX_HEIGHT)
+)
+
+stack_width = (SCREEN_SIZE[0] - (COLUMNS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
+                COLUMNS_OF_STACKS
+stack_height = (SCREEN_SIZE[1] - HAND_PX_HEIGHT * 2 - \
+                (ROWS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
+                ROWS_OF_STACKS
+
+stacks = []
+for col in range(COLUMNS_OF_STACKS - 1): # The -1 is to make space for the deck
+    for row in range(ROWS_OF_STACKS):
+        x = (col + 1) * STACK_PX_MARGINS + col * stack_width
+        y = HAND_PX_HEIGHT + (row + 1) * STACK_PX_MARGINS + row * stack_height
+        stacks.append(Stack((x, y), (stack_width, stack_height)))
+
+deck_width = stack_width
+deck_height = stack_width / 3 * 4
+deck_surface = pygame.transform.scale(deck_img, (deck_width, deck_height))
+
+deck_x = (COLUMNS_OF_STACKS - 1) * deck_width + \
+        COLUMNS_OF_STACKS * STACK_PX_MARGINS
+deck_y = (SCREEN_SIZE[1] - deck_height) / 2 # Center
+
+# DEBUG
+stack[0].add(Card("hearts", "Q", card_imgs["hearts"]["Q"]))
+stack[0].add(Card("clubs", "3", card_imgs["clubs"]["3"]))
+
+
+#############
+# GAME LOOP #
+#############
+
+clock = pygame.time.Clock()
+while True:
+    # Process player inputs.
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            raise SystemExit
+
+    # Logic updates.
+
+    # Render.
+    screen.fill(BG_COLOR)
+    hand1.draw(screen)
+    hand2.draw(screen)
+    for column in stacks:
+        for stack in column:
+            stack.draw(screen)
+    screen.blit(deck_surface, (deck_x, deck_y))
+
+    pygame.display.flip()
+    clock.tick(FPS)

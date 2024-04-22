@@ -1,0 +1,37 @@
+Programování v Pythonu 2024
+Zadání zápočtového projektu - Karetní hra Vatikán
+Filip Kastl
+-------------------------------------------------
+
+Cíl:
+Cílem zápočtového projektu je naprogramovat karetní hru Vatikán. Hra je také
+známá pod názvy Autobus nebo Amerika. Pravidla hry existují ve více variantách
+[1][2], implementace hry se bude držet pravidel pospanými zde.
+
+Pravidla hry:
+Vatikán se hraje se dvěma balíčky žolíkových karet (ovšem bez žolíků
+samotných). Na začátku hry si každý hráč lízne 7 karet. Cílem hry je zbavit se
+všech karet tím, že je hráč vyloží. Hráči si střídají kola. Hráč ve svém kole
+může vyložit karty na stůl pouze pokud utvoří:
+A) Skupinku 3 nebo 4 karet stejné hodnosti ale různých barev (např. čtyři
+dámy).
+B) Skupinku 3 a více karet stejné barvy, které tvoří postupku (např.
+3-2-A-K-Q). Pořadí karet je chápáno cyklicky -- po nejvyšší hodnosti následuje
+nejnižší.
+Hráč může během svého tahu libovolně přemisťovat karty na stole. Tedy ke
+složení nových skupinek může využít jak karty ze svojí ruky, tak karty již
+přítomné na stole. Na konci hráčova tahu však všechny skupinky musí být validní
+(splňovat podmínku A nebo B). Hráč si nemůže karty ze stolu brát do své ruky.
+Pokud hráč ve svém tahu nevyložil žádnou kartu, musí svůj tah zakončit líznutím
+si karty z dobíracího balíčku.
+
+Features:
+Součástí zápočtového projektu bude grafické rozhraní ovládatelné myší. Bude
+možné hrát pouze proti jednomu protivníkovi. Protivník bude ovládaný
+primitivním AI. AI prohledá všechny možné posloupnosti n přesunutí karet.
+Vyřadí posloupnosti, které nezanechají stůl ve validním stavu. Ze zbylých
+posloupností vybere tu, která vyloží na stůl nejvíce karet z ruky.
+
+Webové stránky popisující pravidla hry (ovšem v lehce odlišné variantě):
+[1] https://cs.wikipedia.org/wiki/Autobus_(karetn%C3%AD_hra)
+[2] https://karetnihry.blogspot.com/2011/04/autobus-amerika.html
