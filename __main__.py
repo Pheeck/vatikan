@@ -282,7 +282,7 @@ class Stack:
                 self._rect.x,
                 self._rect.y + a * i
             )
-            screen.blit(card_surface, pos)
+            surface.blit(card_surface, pos)
 
     def collidepoint(self, pos):
         return self._rect.collidepoint(pos)
@@ -355,7 +355,7 @@ class Hand:
                 x,
                 self._rect.y
             )
-            screen.blit(card_surface, pos)
+            surface.blit(card_surface, pos)
 
             x += self._card_width
 
@@ -530,184 +530,182 @@ class EndTurnButton:
         return self._rect.collidepoint(pos)
 
 
-#########
-# SETUP #
-#########
+##############
+# MAIN CLASS #
+##############
+
+class Game:
+    def __init__(self):
+        self.screen = pygame.display.set_mode(SCREEN_SIZE)
+        deck_img = pygame.image.load("karta.png") # TODO
+
+        # Load card images
+        card_imgs = {}
+        for color in COLORS:
+            card_imgs[color] = {}
+            for rank in RANKS:
+                # TODO Nejak chytreji
+                card_imgs[color][rank] = pygame.image.load(
+                    "cards/card_" + str(((RANKS.index(rank) + 1) % len(RANKS)) + 1) + "_" + color + ".png"
+                )
+        missing_img = pygame.image.load("karta.png") # TODO
+
+        missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
+
+        # Setup font
+        font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+
+        # Setup board
+        pickup_width = HAND_PX_HEIGHT * 3 / 4
+        # The bottom player
+        self.pickup1 = PickUpArea(
+                (0, SCREEN_SIZE[1] - HAND_PX_HEIGHT),
+                (pickup_width, HAND_PX_HEIGHT)
+        )
+        self.hand1 = Hand(
+                (pickup_width + STACK_PX_MARGINS, SCREEN_SIZE[1] - HAND_PX_HEIGHT),
+                (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT)
+        )
+        # The top player
+        self.pickup2 = PickUpArea(
+                (0, 0),
+                (pickup_width, HAND_PX_HEIGHT)
+        )
+        self.hand2 = Hand(
+                (pickup_width + STACK_PX_MARGINS, 0),
+                (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT)
+        )
+
+        stack_width = (SCREEN_SIZE[0] - (COLUMNS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
+                        COLUMNS_OF_STACKS
+        stack_height = (SCREEN_SIZE[1] - HAND_PX_HEIGHT * 2 - \
+                        (ROWS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
+                        ROWS_OF_STACKS
+        # The middle of the board
+        self.stacks = []
+        for col in range(COLUMNS_OF_STACKS - 1): # The -1 is to make space for the deck
+            for row in range(ROWS_OF_STACKS):
+                x = (col + 1) * STACK_PX_MARGINS + col * stack_width
+                y = HAND_PX_HEIGHT + (row + 1) * STACK_PX_MARGINS + row * stack_height
+                self.stacks.append(Stack((x, y), (stack_width, stack_height)))
+
+        deck_width = stack_width
+        deck_height = stack_width * CARD_HEIGHT_WIDTH_RATIO
+        deck_x = (COLUMNS_OF_STACKS - 1) * deck_width + \
+                COLUMNS_OF_STACKS * STACK_PX_MARGINS
+        deck_y = (SCREEN_SIZE[1] - deck_height) / 2 # Center
+        self.deck = Deck(
+                (deck_x, deck_y),
+                (deck_width, deck_height),
+                card_imgs,
+                deck_img,
+                font
+        )
+        button_width = stack_width
+        button_height = (stack_height - deck_height) / 2 - STACK_PX_MARGINS
+        button_x = deck_x
+        button_y = deck_y + deck_height + STACK_PX_MARGINS
+        self.end_turn_button = EndTurnButton(
+                (button_x, button_y),
+                (button_width, button_height),
+                font
+        )
+
+        # Put starting cards into players' hands
+        for i in range(STARTING_HAND_NUM_CARDS):
+            card = self.deck.pop()
+            self.hand1.add(card)
+            card = self.deck.pop()
+            self.hand2.add(card)
+
+        # DEBUG
+        #self.stacks[0].add(Card("heart", "Q", card_imgs["heart"]["Q"]))
+        #self.hand1.add(Card("clover", "5", card_imgs["clover"]["5"]))
+        self.end_turn_button.activate()
+
+    def end_turn(self):
+        if self.pickup.has_card():
+            card = self.pickup.pop()
+            self.hand.add(card)
+        if self.player == 1:
+            self.player = 2
+            self.pickup = self.pickup2
+            self.hand = self.hand2
+        else:
+            self.player = 1
+            self.pickup = self.pickup1
+            self.hand = self.hand1
+        self.end_turn_button.set_player(self.player)
+
+    def process_mouse_click(self, pos):
+        if self.deck.collidepoint(pos):
+            # Draw a card from the deck and end turn
+            card = self.deck.pop()
+            self.hand.add(card)
+            self.end_turn()
+        elif self.end_turn_button.collidepoint(pos):
+            # Just end turn
+            self.end_turn()
+        else:
+            if self.pickup.has_card():
+                if self.hand.collidepoint(pos):
+                    card = self.pickup.pop()
+                    self.hand.add(card)
+                else:
+                    for stack in self.stacks:
+                        if stack.collidepoint(pos):
+                            card = self.pickup.pop()
+                            stack.add(card)
+            else:
+                if self.hand.collidepoint(pos):
+                    card = self.hand.card_at_point(pos)
+                    if card:
+                        self.hand.remove(card)
+                        self.pickup.put(card)
+                else:
+                    for stack in self.stacks:
+                        if stack.collidepoint(pos):
+                            card = stack.card_at_point(pos)
+                            if card:
+                                stack.remove(card)
+                                self.pickup.put(card)
+
+    def draw(self):
+        self.screen.fill(BG_COLOR)
+
+        self.pickup1.draw(self.screen)
+        self.hand1.draw(self.screen)
+        self.pickup2.draw(self.screen)
+        self.hand2.draw(self.screen)
+        for stack in self.stacks:
+            stack.draw(self.screen)
+        self.deck.draw(self.screen)
+        self.end_turn_button.draw(self.screen)
+
+        pygame.display.flip()
+
+    def run(self):
+        self.player = 1 # 1 or 2
+        self.pickup = self.pickup1
+        self.hand = self.hand1
+
+        clock = pygame.time.Clock()
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    raise SystemExit
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pos = pygame.mouse.get_pos()
+                    self.process_mouse_click(pos)
+            self.draw()
+            clock.tick(FPS)
+
+
+###############
+# ENTRY POINT #
+###############
 
 pygame.init()
-screen = pygame.display.set_mode(SCREEN_SIZE)
-deck_img = pygame.image.load("karta.png") # TODO
-
-# Load card images
-card_imgs = {}
-for color in COLORS:
-    card_imgs[color] = {}
-    for rank in RANKS:
-        # TODO Nejak chytreji
-        card_imgs[color][rank] = pygame.image.load(
-            "cards/card_" + str(((RANKS.index(rank) + 1) % len(RANKS)) + 1) + "_" + color + ".png"
-        )
-missing_img = pygame.image.load("karta.png") # TODO
-
-missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
-
-# Setup font
-font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
-
-# Setup board
-pickup_width = HAND_PX_HEIGHT * 3 / 4
-# The bottom player
-pickup1 = PickUpArea(
-        (0, SCREEN_SIZE[1] - HAND_PX_HEIGHT),
-        (pickup_width, HAND_PX_HEIGHT)
-)
-hand1 = Hand(
-        (pickup_width + STACK_PX_MARGINS, SCREEN_SIZE[1] - HAND_PX_HEIGHT),
-        (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT)
-)
-# The top player
-pickup2 = PickUpArea(
-        (0, 0),
-        (pickup_width, HAND_PX_HEIGHT)
-)
-hand2 = Hand(
-        (pickup_width + STACK_PX_MARGINS, 0),
-        (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT)
-)
-
-stack_width = (SCREEN_SIZE[0] - (COLUMNS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
-                COLUMNS_OF_STACKS
-stack_height = (SCREEN_SIZE[1] - HAND_PX_HEIGHT * 2 - \
-                (ROWS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
-                ROWS_OF_STACKS
-# The middle of the board
-stacks = []
-for col in range(COLUMNS_OF_STACKS - 1): # The -1 is to make space for the deck
-    for row in range(ROWS_OF_STACKS):
-        x = (col + 1) * STACK_PX_MARGINS + col * stack_width
-        y = HAND_PX_HEIGHT + (row + 1) * STACK_PX_MARGINS + row * stack_height
-        stacks.append(Stack((x, y), (stack_width, stack_height)))
-
-deck_width = stack_width
-deck_height = stack_width * CARD_HEIGHT_WIDTH_RATIO
-deck_x = (COLUMNS_OF_STACKS - 1) * deck_width + \
-        COLUMNS_OF_STACKS * STACK_PX_MARGINS
-deck_y = (SCREEN_SIZE[1] - deck_height) / 2 # Center
-deck = Deck(
-        (deck_x, deck_y),
-        (deck_width, deck_height),
-        card_imgs,
-        deck_img,
-        font
-)
-button_width = stack_width
-button_height = (stack_height - deck_height) / 2 - STACK_PX_MARGINS
-button_x = deck_x
-button_y = deck_y + deck_height + STACK_PX_MARGINS
-end_turn_button = EndTurnButton(
-        (button_x, button_y),
-        (button_width, button_height),
-        font
-)
-
-# Put starting cards into players' hands
-for i in range(STARTING_HAND_NUM_CARDS):
-    card = deck.pop()
-    hand1.add(card)
-    card = deck.pop()
-    hand2.add(card)
-
-# DEBUG
-#stacks[0].add(Card("heart", "Q", card_imgs["heart"]["Q"]))
-#hand1.add(Card("clover", "5", card_imgs["clover"]["5"]))
-end_turn_button.activate()
-
-
-#############
-# GAME LOOP #
-#############
-
-player = 1 # 1 or 2
-pickup = pickup1
-hand = hand1
-
-clock = pygame.time.Clock()
-while True:
-    # Process player inputs.
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            raise SystemExit
-        if event.type == pygame.MOUSEBUTTONUP:
-            pos = pygame.mouse.get_pos()
-
-            if deck.collidepoint(pos):
-                # Draw a card from the deck
-                card = deck.pop()
-                hand.add(card)
-                # End turn TODO nějak chytřeji
-                if pickup.has_card():
-                    card = pickup.pop()
-                    hand.add(card)
-                if player == 1:
-                    player = 2
-                    pickup = pickup2
-                    hand = hand2
-                else:
-                    player = 1
-                    pickup = pickup1
-                    hand = hand1
-                end_turn_button.set_player(player)
-            elif end_turn_button.collidepoint(pos):
-                # End turn
-                if pickup.has_card():
-                    card = pickup.pop()
-                    hand.add(card)
-                if player == 1:
-                    player = 2
-                    pickup = pickup2
-                    hand = hand2
-                else:
-                    player = 1
-                    pickup = pickup1
-                    hand = hand1
-                end_turn_button.set_player(player)
-            else:
-                if pickup.has_card():
-                    if hand.collidepoint(pos):
-                        card = pickup.pop()
-                        hand.add(card)
-                    else:
-                        for stack in stacks:
-                            if stack.collidepoint(pos):
-                                card = pickup.pop()
-                                stack.add(card)
-                else:
-                    if hand.collidepoint(pos):
-                        card = hand.card_at_point(pos)
-                        if card:
-                            hand.remove(card)
-                            pickup.put(card)
-                    else:
-                        for stack in stacks:
-                            if stack.collidepoint(pos):
-                                card = stack.card_at_point(pos)
-                                if card:
-                                    stack.remove(card)
-                                    pickup.put(card)
-
-    # Logic updates.
-
-    # Render.
-    screen.fill(BG_COLOR)
-    pickup1.draw(screen)
-    hand1.draw(screen)
-    pickup2.draw(screen)
-    hand2.draw(screen)
-    for stack in stacks:
-        stack.draw(screen)
-    deck.draw(screen)
-    end_turn_button.draw(screen)
-
-    pygame.display.flip()
-    clock.tick(FPS)
+game = Game()
+game.run()
