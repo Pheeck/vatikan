@@ -142,9 +142,10 @@ momentálně řeším:
 - Bug: Do stacku lze přidat více než 13 karet
 
 
-24/04/22
+24/04/23
 
--
+- BUG: Spades 9, Spades 10, Spades J spawne hromadu missing markerů
+- Přemýšlím nad separováním programu do modulů
 
 
 Todo list (speedrun k tomu, aby se hra dala hrát):
@@ -158,9 +159,9 @@ x Lízání karet
 x Začátek hry: Rozdání prvních n karet
 x Vypisování počtu karet v balíčku
 
-- Střídání tahů
+x Střídání tahů
 - Kontrolování, že herní plocha je při předání tahu v poho
-- Střídání tahů i jinak, než s líznutím
+- Střídání tahů i jinak, než s líznutím (kontrola, že něco vyšlo z ruky
 - Konec hry
 
 - Vracení do ruky a lízání jediným kliknutím

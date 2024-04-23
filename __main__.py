@@ -21,6 +21,29 @@ import pygame.transform
 import pygame.font
 
 
+#############
+# CONSTANTS #
+#############
+
+BG_COLOR = "0x005500"
+FG_COLOR = "0x227722"
+ERR_COLOR = "0x772222"
+TEXT_COLOR = "0x000000"
+SCREEN_SIZE = (1440, 900)
+FPS = 30
+COLORS = ("heart", "clover", "spade", "diamond")
+SPECIAL_COLOR = "special" # For missing cards
+RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
+ROWS_OF_STACKS = 1
+COLUMNS_OF_STACKS = 8
+HAND_PX_HEIGHT = 160
+STACK_PX_MARGINS = 16
+CARD_HEIGHT_WIDTH_RATIO = 4. / 3
+STARTING_HAND_NUM_CARDS = 7
+FONT_NAME = "arial"
+FONT_SIZE = 24
+
+
 #####################
 # UTILITY FUNCTIONS #
 #####################
@@ -198,10 +221,6 @@ class Stack:
         """
         self._cards.append(card)
         self.reconstruct()
-
-        # TODO Chci nekdy rejectit?
-
-        return True
     
     def remove(self, card):
         """
@@ -313,7 +332,6 @@ class Hand:
 
     def add(self, card):
         self._cards.append(card)
-        return True
 
     def remove(self, card):
         self._cards.remove(card)
@@ -512,29 +530,6 @@ class EndTurnButton:
         return self._rect.collidepoint(pos)
 
 
-#############
-# CONSTANTS #
-#############
-
-BG_COLOR = "0x005500"
-FG_COLOR = "0x227722"
-ERR_COLOR = "0x772222"
-TEXT_COLOR = "0x000000"
-SCREEN_SIZE = (1440, 900)
-FPS = 30
-COLORS = ("heart", "clover", "spade", "diamond")
-SPECIAL_COLOR = "special" # For missing cards
-RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
-ROWS_OF_STACKS = 1
-COLUMNS_OF_STACKS = 8
-HAND_PX_HEIGHT = 160
-STACK_PX_MARGINS = 16
-CARD_HEIGHT_WIDTH_RATIO = 4. / 3
-STARTING_HAND_NUM_CARDS = 7
-FONT_NAME = "arial"
-FONT_SIZE = 30
-
-
 #########
 # SETUP #
 #########
@@ -646,34 +641,60 @@ while True:
         if event.type == pygame.MOUSEBUTTONUP:
             pos = pygame.mouse.get_pos()
 
-            if pickup.has_card():
-                if hand.collidepoint(pos):
-                    card = pickup.get()
-                    if hand.add(card):
-                        pickup.pop()
+            if deck.collidepoint(pos):
+                # Draw a card from the deck
+                card = deck.pop()
+                hand.add(card)
+                # End turn TODO nějak chytřeji
+                if pickup.has_card():
+                    card = pickup.pop()
+                    hand.add(card)
+                if player == 1:
+                    player = 2
+                    pickup = pickup2
+                    hand = hand2
                 else:
-                    for stack in stacks:
-                        if stack.collidepoint(pos):
-                            card = pickup.get()
-                            if stack.add(card):
-                                pickup.pop()
+                    player = 1
+                    pickup = pickup1
+                    hand = hand1
+                end_turn_button.set_player(player)
+            elif end_turn_button.collidepoint(pos):
+                # End turn
+                if pickup.has_card():
+                    card = pickup.pop()
+                    hand.add(card)
+                if player == 1:
+                    player = 2
+                    pickup = pickup2
+                    hand = hand2
+                else:
+                    player = 1
+                    pickup = pickup1
+                    hand = hand1
+                end_turn_button.set_player(player)
             else:
-                if deck.collidepoint(pos):
-                    card = deck.pop()
-                    if card:
-                        pickup.put(card)
-                elif hand.collidepoint(pos):
-                    card = hand.card_at_point(pos)
-                    if card:
-                        hand.remove(card)
-                        pickup.put(card)
+                if pickup.has_card():
+                    if hand.collidepoint(pos):
+                        card = pickup.pop()
+                        hand.add(card)
+                    else:
+                        for stack in stacks:
+                            if stack.collidepoint(pos):
+                                card = pickup.pop()
+                                stack.add(card)
                 else:
-                    for stack in stacks:
-                        if stack.collidepoint(pos):
-                            card = stack.card_at_point(pos)
-                            if card:
-                                stack.remove(card)
-                                pickup.put(card)
+                    if hand.collidepoint(pos):
+                        card = hand.card_at_point(pos)
+                        if card:
+                            hand.remove(card)
+                            pickup.put(card)
+                    else:
+                        for stack in stacks:
+                            if stack.collidepoint(pos):
+                                card = stack.card_at_point(pos)
+                                if card:
+                                    stack.remove(card)
+                                    pickup.put(card)
 
     # Logic updates.
 
