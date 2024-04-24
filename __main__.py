@@ -11,6 +11,14 @@ Note2: What do we mean by a "flush" and a "triplet"?
 A flush is a list of size >= 3 containing cards of same color but unique ranks
 that form a cyclic sequence. A triplet is a list of size >= 3 containing cards
 of unique color but same ranks.
+
+Note3: What do we mean by a "frozen" card?
+The rules prohibit you from picking up cards from the board to your hand. So
+at the end of a turn, all cards on the board are set as frozen. Frozen cards
+can be moved between stacks on the board but cannot enter a players hand. We
+allow you to move the cards that were in your hand at the start of the turn
+freely. This way you can interactively figure out what works and only fully
+commit to placing cards on the board by ending your turn.
 """
 
 from random import shuffle
@@ -35,13 +43,13 @@ COLORS = ("heart", "clover", "spade", "diamond")
 SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 ROWS_OF_STACKS = 1
-COLUMNS_OF_STACKS = 8
-HAND_PX_HEIGHT = 160
+COLUMNS_OF_STACKS = 10
+HAND_PX_HEIGHT = 120
 STACK_PX_MARGINS = 16
 CARD_HEIGHT_WIDTH_RATIO = 4. / 3
 STARTING_HAND_NUM_CARDS = 7
 FONT_NAME = "arial"
-FONT_SIZE = 24
+FONT_SIZE = 18
 
 
 #####################
@@ -52,7 +60,7 @@ def sorted_by_rank(cards):
     """
     Return the given list of cards (class Card) sorted by rank
     """
-    return sorted(cards, key=lambda x: x.rank)
+    return sorted(cards, key=lambda x: RANKS.index(x.rank))
 
 def get_biggest_gap(cards):
     """
@@ -123,12 +131,14 @@ def is_triplet(cards):
 
     return True
 
-def attempt_construct_flush(cards):
+def attempt_construct_flush(cards, missing_card):
     """
     Try to construct a flush (see Note2 for definition) from given cards
     possibly using missing card markers and return the flush. If constructing
     the flush is not possible (there are less than 3 cards, there are multiple
     cards of same rank or not all cards are of the same color), return None.
+
+    missing_card ... the singleton Card object representing a missing card
     """
     flush = sorted_by_rank(cards)
 
@@ -185,21 +195,38 @@ class Card:
     def __init__(self, color, rank, img):
         self.color = color
         self.rank = rank
-        self.img = img
+        self.img = img.copy()
+
+        self._frozen = False
+        self._update_alpha()
+
+    def freeze(self):
+        self._frozen = True
+        self._update_alpha()
+
+    def is_frozen(self):
+        return self._frozen
+
+    def _update_alpha(self):
+        if self._frozen:
+            self.img.set_alpha(255 * 1.00)
+        else:
+            self.img.set_alpha(255 * 0.80) # TODO Konstanta
 
 class Stack:
-    def __init__(self, pos, size):
+    def __init__(self, pos, size, missing_card):
         """
         pos ... (x, y) coordinates
         size ... (x, y) coordinates
+        missing_card ... the singleton Card object representing a missing card
         """
         self._rect = pygame.Rect(pos, size)
         self._cards = [] # Contains just cards, no missing markers
         self._cards_with_missing = [] # Sorted cards, contains missing markers
-        self._valid = True # Is empty or contains a flush or a triplet
+        self._is_valid = True # Is empty or contains a flush or a triplet
 
         # UI Invariant: At least the top 1/5 of each card should be visible
-        # Also, lets assume that at least on card should be visible fully
+        # Also, lets assume that at least one card should be visible fully
         #
         # Now, given the total height of stack we want to compute how to resize
         # the cards to achieve this.
@@ -212,6 +239,7 @@ class Stack:
         a = self._rect.height / (len(RANKS) + 4)
         self.card_height = a * 5 # TODO Schovat do nejake konstanty?
         self.card_width = self.card_height / CARD_HEIGHT_WIDTH_RATIO
+        self.missing_card = missing_card
 
     def add(self, card):
         """
@@ -244,22 +272,39 @@ class Stack:
         """
         if not self._cards:
             self._cards_with_missing = []
-            self._valid = True
+            self._is_valid = True
             return
 
         if is_triplet(self._cards):
             self._cards_with_missing = [c for c in self._cards]
-            self._valid = True
+            self._is_valid = True
             return
 
-        foo = attempt_construct_flush(self._cards)
+        foo = attempt_construct_flush(self._cards, self.missing_card)
         if not foo is None:
             self._cards_with_missing = foo
-            self._valid = missing_card not in foo
+            self._is_valid = self.missing_card not in foo
             return
 
         self._cards_with_missing = [c for c in self._cards]
-        self._valid = False
+        self._is_valid = False
+
+    def is_valid(self):
+        return self._is_valid
+
+    def freeze(self):
+        for card in self._cards:
+            card.freeze()
+
+    def is_frozen(self):
+        """
+        Does the stack contain only frozen cards (No new card was put in the
+        stack this turn)?
+        """
+        frozen = True
+        for card in self._cards:
+            frozen &= card.is_frozen()
+        return frozen
 
     def draw(self, surface):
         # Note: card_at_point() depends on how the stack is drawn
@@ -267,7 +312,7 @@ class Stack:
         # in card_at_point()
 
         pygame.draw.rect(surface,
-                         FG_COLOR if self._valid else ERR_COLOR,
+                         FG_COLOR if self._is_valid else ERR_COLOR,
                          self._rect)
 
         a = self.card_height / 5
@@ -335,6 +380,9 @@ class Hand:
 
     def remove(self, card):
         self._cards.remove(card)
+
+    def is_empty(self):
+        return len(self._cards) == 0
 
     def draw(self, surface):
         # Note: card_at_point() depends on how the hand is drawn
@@ -454,7 +502,7 @@ class Deck:
         """
         self._text_surface = self._font.render(
             str(len(self._cards)), 
-            False,
+            True,
             TEXT_COLOR
         )
 
@@ -481,33 +529,50 @@ class EndTurnButton:
         self._rect = pygame.Rect(pos, size)
         self._font = font
 
-        self._active = False
+        self._board_valid = True
+        self._card_draw_needed = True
         self._player = 1
 
         self._text_surface1 = None
         self._text_surface2 = None
+        self._text_surface3 = None
         self._update_text()
 
     def _update_text(self):
         text1 = f"Hraje hrac {self._player}"
-        text2 = "Predat tah" if self._active else ""
+        text2 = "Predat tah" if self._board_valid else ""
+        text3 = "a liznout si" if self._board_valid and \
+            self._card_draw_needed else ""
         self._text_surface1 = self._font.render(
             text1,
-            False,
+            True,
             TEXT_COLOR
         )
         self._text_surface2 = self._font.render(
             text2,
-            False,
+            True,
+            TEXT_COLOR
+        )
+        self._text_surface3 = self._font.render(
+            text3,
+            True,
             TEXT_COLOR
         )
 
-    def activate(self):
-        self._active = True
+    def set_board_valid(self):
+        self._board_valid = True
         self._update_text()
 
-    def deactivate(self):
-        self._active = False
+    def unset_board_valid(self):
+        self._board_valid = False
+        self._update_text()
+
+    def set_card_draw_needed(self):
+        self._card_draw_needed = True
+        self._update_text()
+
+    def unset_card_draw_needed(self):
+        self._card_draw_needed = False
         self._update_text()
 
     def set_player(self, player):
@@ -515,7 +580,7 @@ class EndTurnButton:
         self._update_text()
 
     def draw(self, surface):
-        color = FG_COLOR if self._active else BG_COLOR
+        color = FG_COLOR if self._board_valid else BG_COLOR
         pygame.draw.rect(surface, color, self._rect)
         surface.blit(
                 self._text_surface1,
@@ -524,6 +589,12 @@ class EndTurnButton:
         surface.blit(
                 self._text_surface2,
                 (self._rect.x, self._rect.y + self._text_surface1.get_height())
+        )
+        surface.blit(
+                self._text_surface3,
+                (self._rect.x, self._rect.y + \
+                 self._text_surface1.get_height() + \
+                 self._text_surface2.get_height())
         )
 
     def collidepoint(self, pos):
@@ -553,7 +624,7 @@ class Game:
         missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
 
         # Setup font
-        font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
 
         # Setup board
         pickup_width = HAND_PX_HEIGHT * 3 / 4
@@ -587,7 +658,8 @@ class Game:
             for row in range(ROWS_OF_STACKS):
                 x = (col + 1) * STACK_PX_MARGINS + col * stack_width
                 y = HAND_PX_HEIGHT + (row + 1) * STACK_PX_MARGINS + row * stack_height
-                self.stacks.append(Stack((x, y), (stack_width, stack_height)))
+                self.stacks.append(Stack((x, y), (stack_width, stack_height),
+                                         missing_card))
 
         deck_width = stack_width
         deck_height = stack_width * CARD_HEIGHT_WIDTH_RATIO
@@ -599,7 +671,7 @@ class Game:
                 (deck_width, deck_height),
                 card_imgs,
                 deck_img,
-                font
+                self.font
         )
         button_width = stack_width
         button_height = (stack_height - deck_height) / 2 - STACK_PX_MARGINS
@@ -608,7 +680,7 @@ class Game:
         self.end_turn_button = EndTurnButton(
                 (button_x, button_y),
                 (button_width, button_height),
-                font
+                self.font
         )
 
         # Put starting cards into players' hands
@@ -621,12 +693,45 @@ class Game:
         # DEBUG
         #self.stacks[0].add(Card("heart", "Q", card_imgs["heart"]["Q"]))
         #self.hand1.add(Card("clover", "5", card_imgs["clover"]["5"]))
-        self.end_turn_button.activate()
+        self.end_turn_button.set_board_valid()
+
+        self.winner = None
+
+        self.win_screen = self.screen.copy()
+        self.win_screen.fill(FG_COLOR)
+        self.win_screen.set_alpha(255 * 0.60)
+
+    def board_is_valid(self):
+        valid = True
+        for stack in self.stacks:
+            valid &= stack.is_valid()
+        return valid
+
+    def board_is_frozen(self):
+        """
+        Does the board contain only frozen cards (No new card was put on the board
+        this turn)?
+        """
+        frozen = True
+        for stack in self.stacks:
+            frozen &= stack.is_frozen()
+        return frozen
+
+    def select_winner(self, player):
+        self.winner = player
+        s = self.font.render(f"Player {player} won", True, TEXT_COLOR)
+        x = self.screen.get_width() / 2 - s.get_width() / 2
+        y = self.screen.get_height() / 2 - s.get_height() / 2
+        self.win_screen.blit(s, (x, y))
 
     def end_turn(self):
         if self.pickup.has_card():
             card = self.pickup.pop()
             self.hand.add(card)
+
+        if self.winner is None and self.hand.is_empty():
+            self.select_winner(self.player)
+
         if self.player == 1:
             self.player = 2
             self.pickup = self.pickup2
@@ -635,40 +740,60 @@ class Game:
             self.player = 1
             self.pickup = self.pickup1
             self.hand = self.hand1
+
+        # Freeze all cards on the board
+        for stack in self.stacks:
+            stack.freeze()
+
         self.end_turn_button.set_player(self.player)
 
     def process_mouse_click(self, pos):
-        if self.deck.collidepoint(pos):
-            # Draw a card from the deck and end turn
-            card = self.deck.pop()
-            self.hand.add(card)
-            self.end_turn()
-        elif self.end_turn_button.collidepoint(pos):
-            # Just end turn
-            self.end_turn()
+        if self.end_turn_button.collidepoint(pos):
+            # Ending the turn
+            # TODO Chytreji? Duplikuji tady logiku mezi Game a EndTurnButton
+            if self.board_is_valid():
+                if self.board_is_frozen():
+                    card = self.deck.pop()
+                    self.hand.add(card)
+                self.end_turn()
         else:
             if self.pickup.has_card():
                 if self.hand.collidepoint(pos):
-                    card = self.pickup.pop()
-                    self.hand.add(card)
+                    # Deselecting a card from the hand
+                    card = self.pickup.get()
+                    if not card.is_frozen():
+                        self.hand.add(card)
+                        self.pickup.pop()
                 else:
+                    # Putting a card onto a stack
                     for stack in self.stacks:
                         if stack.collidepoint(pos):
                             card = self.pickup.pop()
                             stack.add(card)
             else:
                 if self.hand.collidepoint(pos):
+                    # Selecting a card from the hand
                     card = self.hand.card_at_point(pos)
                     if card:
                         self.hand.remove(card)
                         self.pickup.put(card)
                 else:
+                    # Selecting a card from a stack
                     for stack in self.stacks:
                         if stack.collidepoint(pos):
                             card = stack.card_at_point(pos)
                             if card:
                                 stack.remove(card)
                                 self.pickup.put(card)
+        
+        if self.board_is_valid(): # TODO Chytreji?
+            self.end_turn_button.set_board_valid()
+        else:
+            self.end_turn_button.unset_board_valid()
+        if self.board_is_frozen():
+            self.end_turn_button.set_card_draw_needed()
+        else:
+            self.end_turn_button.unset_card_draw_needed()
 
     def draw(self):
         self.screen.fill(BG_COLOR)
@@ -682,12 +807,17 @@ class Game:
         self.deck.draw(self.screen)
         self.end_turn_button.draw(self.screen)
 
+        if self.winner is not None:
+            self.screen.blit(self.win_screen, (0, 0))
+
         pygame.display.flip()
 
     def run(self):
         self.player = 1 # 1 or 2
         self.pickup = self.pickup1
         self.hand = self.hand1
+
+        self.draw()
 
         clock = pygame.time.Clock()
         while True:
@@ -706,6 +836,7 @@ class Game:
 # ENTRY POINT #
 ###############
 
-pygame.init()
-game = Game()
-game.run()
+if __name__ == "__main__":
+    pygame.init()
+    game = Game()
+    game.run()

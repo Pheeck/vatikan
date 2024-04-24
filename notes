@@ -144,8 +144,20 @@ momentálně řeším:
 
 24/04/23
 
-- BUG: Spades 9, Spades 10, Spades J spawne hromadu missing markerů
 - Přemýšlím nad separováním programu do modulů
+
+
+24/04/24
+
+- Možná bych si měl rozmyslet to renderování jenom po kliku myši
+- Možná end_turn_button by měl mít příznaky "board valid" a "card draw needed"
+
+- Nechci, aby karta byla zodpovědná za svoje vykreslování a odpovídání
+  collidepos?
+
+- Udělám to tak, že i po určení výherce je možné pokračovat ve hře
+- BUG: Při zmenšeném UI jsou stále karty ve stacích velké (přetékají ze stacku)
+  - Možná neuvažují šířku stacků, když nastavuji velikost karet ve stacku
 
 
 Todo list (speedrun k tomu, aby se hra dala hrát):
@@ -160,13 +172,15 @@ x Začátek hry: Rozdání prvních n karet
 x Vypisování počtu karet v balíčku
 
 x Střídání tahů
-- Kontrolování, že herní plocha je při předání tahu v poho
-- Střídání tahů i jinak, než s líznutím (kontrola, že něco vyšlo z ruky
-- Konec hry
+x Kontrolování, že herní plocha je při předání tahu v poho
+x Střídání tahů i jinak, než s líznutím (kontrola, že něco vyšlo z ruky)
+  x Vymyslet název pro příznak end_turn_button objektu, který by říkal, že na
+    stole je aspoň jedna not freezed karta
+x Zobrazování, že karta je freezed
+x Opravit bug invalidující validní stacky
+x Konec hry
 
-- Vracení do ruky a lízání jediným kliknutím
-- Zamezení vrácení do ruky karet, které začaly tah na stole
-  - A označení těch, které do ruky vrátit lze (hvězdička?, zesvětlení karty?)
+- Bug s velikostí karet ve stacku
 - Co když...
   - Ruka bude příliš plná
   - Stacků bude moc
@@ -181,12 +195,17 @@ PRVNÍ VERZE:
 - Žádní žolíci
 
 DALŠÍ VERZE:
+- Oddělit logiku a vykreslování
+  - Pak process_mouse_click by nedělal tolik věcí
+- AI
+- Určitě reprezentovat ranky pouze číselně (jediné, na co potřebuji ranky, je
+  načítání obrázků, jinak je to cyklická grupa 13ti prvků)
+- Rozmyslet lépe gaps (možná uzavřené intervaly?)
+
+MOŽNÁ:
 - Scaling obrazovky dle počtu stacků?
 - Rotující stacky?
 - Volné přemisťování stacků?
 - Oddělit logiku a vykreslování?
 - Možnost srovnat si libovolně ruku?
-- Určitě reprezentovat ranky pouze číselně (jediné, na co potřebuji ranky, je
-  načítání obrázků, jinak je to cyklická grupa 13ti prvků)
-- Rozmyslet lépe gaps (možná uzavřené intervaly?)
 - Žolíci
