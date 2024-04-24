@@ -43,7 +43,7 @@ COLORS = ("heart", "clover", "spade", "diamond")
 SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 ROWS_OF_STACKS = 1
-COLUMNS_OF_STACKS = 10
+COLUMNS_OF_STACKS = 12
 HAND_PX_HEIGHT = 120
 STACK_PX_MARGINS = 16
 CARD_HEIGHT_WIDTH_RATIO = 4. / 3
@@ -233,12 +233,19 @@ class Stack:
         #
         # We know that there will be at most len(RANKS) cards in a stack
         #
-        # So stack_height <= len(RANKS) * a + 4 * x
+        # So stack_height <= len(RANKS) * a + 4 * a
         # Where a = 1/5 * height of a card
 
         a = self._rect.height / (len(RANKS) + 4)
-        self.card_height = a * 5 # TODO Schovat do nejake konstanty?
-        self.card_width = self.card_height / CARD_HEIGHT_WIDTH_RATIO
+        self._card_height = a * 5 # TODO Schovat do nejake konstanty?
+        self._card_width = self._card_height / CARD_HEIGHT_WIDTH_RATIO
+
+        # But if width of the stack is the limiting factor, compute height
+        # based on it instead. The invariant will be kept that way too.
+        if self._card_width > self._rect.w:
+            self._card_width = self._rect.w
+            self._card_height = self._card_width * CARD_HEIGHT_WIDTH_RATIO
+
         self.missing_card = missing_card
 
     def add(self, card):
@@ -315,13 +322,13 @@ class Stack:
                          FG_COLOR if self._is_valid else ERR_COLOR,
                          self._rect)
 
-        a = self.card_height / 5
+        a = self._card_height / 5
 
         for i, card in enumerate(self._cards_with_missing):
             img = card.img
             card_surface = pygame.transform.scale(
                 img,
-                (self.card_width, self.card_height)
+                (self._card_width, self._card_height)
             )
             pos = (
                 self._rect.x,
@@ -350,9 +357,9 @@ class Stack:
         x -= self._rect.x
         y -= self._rect.y
 
-        a = self.card_height / 5
+        a = self._card_height / 5
 
-        if x > self.card_width:
+        if x > self._card_width:
             return None
 
         i = int(y / a)
@@ -785,7 +792,7 @@ class Game:
                             if card:
                                 stack.remove(card)
                                 self.pickup.put(card)
-        
+
         if self.board_is_valid(): # TODO Chytreji?
             self.end_turn_button.set_board_valid()
         else:

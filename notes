@@ -180,7 +180,7 @@ x Zobrazování, že karta je freezed
 x Opravit bug invalidující validní stacky
 x Konec hry
 
-- Bug s velikostí karet ve stacku
+x Bug s velikostí karet ve stacku
 - Co když...
   - Ruka bude příliš plná
   - Stacků bude moc
