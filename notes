@@ -160,6 +160,16 @@ momentálně řeším:
   - Možná neuvažují šířku stacků, když nastavuji velikost karet ve stacku
 
 
+24/04/25
+
+- FEATURE NÁPAD: Right-click na kartu na stole jí hodí do ruky
+- FEATURE NÁPAD: Když je v ruce karet moc, začnou se překrývat
+  - Možná definovat maximální překryv?
+- Možná dva řádky stacků?
+- BUDOUCNOST FEATURE NÁPAD: Tlačítko na sortění ruky
+- BUDOUCNOST FEATURE NÁPAD: Ukládání a načítání hry
+
+
 Todo list (speedrun k tomu, aby se hra dala hrát):
 x Přesouvání karet mezi stacky
   x Karta vypíše, co je, když se na ni klikne
