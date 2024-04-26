@@ -42,14 +42,14 @@ FPS = 30
 COLORS = ("heart", "clover", "spade", "diamond")
 SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
-ROWS_OF_STACKS = 1
-COLUMNS_OF_STACKS = 12
+ROWS_OF_STACKS = 2
+COLUMNS_OF_STACKS = 18
 HAND_PX_HEIGHT = 120
 STACK_PX_MARGINS = 16
 CARD_HEIGHT_WIDTH_RATIO = 4. / 3
 STARTING_HAND_NUM_CARDS = 10
 FONT_NAME = "arial"
-FONT_SIZE = 16
+FONT_SIZE = 11
 
 
 #####################
@@ -342,7 +342,8 @@ class Stack:
     def card_at_point(self, pos):
         """
         Return the card from this stack that collides with the point 'pos'. If
-        there is none, return None.
+        there is no card, return None. If the card is a missing card marker,
+        also return None.
         """
 
         # Note: card_at_point() depends on how the stack is drawn
@@ -368,7 +369,11 @@ class Stack:
         if i < 0 or i >= card_num:
             return None
         else:
-            return self._cards_with_missing[i]
+            card = self._cards_with_missing[i]
+            if card == self.missing_card:
+                return None
+            else:
+                return card
 
 class Hand:
     def __init__(self, pos, size):
@@ -497,7 +502,7 @@ class Deck:
                 # Each card two times
                 self._cards.append(Card(color, rank, img))
                 self._cards.append(Card(color, rank, img))
-        shuffle(self._cards)
+        #shuffle(self._cards) DEBUG
 
         self._font = font
         self._text_surface = None
