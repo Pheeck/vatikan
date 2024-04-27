@@ -170,6 +170,12 @@ momentálně řeším:
 - BUDOUCNOST FEATURE NÁPAD: Ukládání a načítání hry
 
 
+24/04/27
+
+- BUDOUCNOST FEATURE NÁPAD: Pass and play jako v Polytopii
+- FEATURE NÁPAD: Zvýrazňovat stacky, kde se něco stalo
+
+
 Todo list (speedrun k tomu, aby se hra dala hrát):
 x Přesouvání karet mezi stacky
   x Karta vypíše, co je, když se na ni klikne
@@ -192,9 +198,9 @@ x Konec hry
 
 x Bug s velikostí karet ve stacku
 - Co když...
-  - Ruka bude příliš plná
-  - Stacků bude moc
-- Na kartách ve stacku není na všech vidět hodnost
+  - Ruka bude příliš plná ... nám to s Anežkou stačilo, jak je to teď
+  x Stacků bude moc ... prostě tam plácni dost pozic pro stacky
+- Na kartách ve stacku není na všech vidět barva
 - Zakázání přesouvání karet pohybem kolečka myši
 
 PRVNÍ VERZE:

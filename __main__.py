@@ -44,12 +44,12 @@ SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 ROWS_OF_STACKS = 2
 COLUMNS_OF_STACKS = 18
-HAND_PX_HEIGHT = 120
-STACK_PX_MARGINS = 16
+HAND_PX_HEIGHT = 100
+STACK_PX_MARGINS = 8
 CARD_HEIGHT_WIDTH_RATIO = 4. / 3
-STARTING_HAND_NUM_CARDS = 10
+STARTING_HAND_NUM_CARDS = 12
 FONT_NAME = "arial"
-FONT_SIZE = 11
+FONT_SIZE = 9
 
 
 #####################
@@ -502,7 +502,7 @@ class Deck:
                 # Each card two times
                 self._cards.append(Card(color, rank, img))
                 self._cards.append(Card(color, rank, img))
-        #shuffle(self._cards) DEBUG
+        shuffle(self._cards)
 
         self._font = font
         self._text_surface = None
