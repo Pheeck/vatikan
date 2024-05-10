@@ -28,6 +28,8 @@ import pygame.draw
 import pygame.transform
 import pygame.font
 
+import ai
+
 
 #############
 # CONSTANTS #
@@ -758,6 +760,8 @@ class Game:
             stack.freeze()
 
         self.end_turn_button.set_player(self.player)
+
+        ai.suggest_move(self) # DEBUG
 
     def process_mouse_click(self, pos):
         if self.end_turn_button.collidepoint(pos):

@@ -174,7 +174,24 @@ momentálně řeším:
 
 - BUDOUCNOST FEATURE NÁPAD: Pass and play jako v Polytopii
 - FEATURE NÁPAD: Zvýrazňovat stacky, kde se něco stalo
+- FEATURE NÁPAD: Tlačítko s otazníčkem, které zobrazí nápovědu (pravidla hry)
+  (průhledně)
 
+
+24/05/09
+
+- Jdu si hrát s AI
+
+
+24/05/10
+
+-
+
+
+ai cíle:
+x Našeptávej cokoliv validního
+x Našeptávej i možnosti, jak přiložit karty k existujícím stackům
+- Nejprve se rozhodni, kolik karet chceš ze stolu zvednout, pak pracuj i s nimi
 
 Todo list (speedrun k tomu, aby se hra dala hrát):
 x Přesouvání karet mezi stacky
@@ -197,6 +214,7 @@ x Opravit bug invalidující validní stacky
 x Konec hry
 
 x Bug s velikostí karet ve stacku
+- Bug, že hra spadne, když kliknu na prázdný balíček
 - Co když...
   - Ruka bude příliš plná ... nám to s Anežkou stačilo, jak je to teď
   x Stacků bude moc ... prostě tam plácni dost pozic pro stacky
