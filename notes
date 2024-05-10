@@ -185,13 +185,36 @@ momentálně řeším:
 
 24/05/10
 
--
+- Bug: S liftováním frozen karet už pro MAX_DEPTH=2 a 1 stack na ploše
+  prohledávání nedoběhne
+- Bug: Nekontroluji, jestli stacky, z kterých jsem liftnul, jsou na konci tahu
+  validní
+- uhh, i když nastavím, že liftovat se dá pouze 0 karet, tak už s MAX_DEPTH=3
+  program z nějakého důvodu nedobíhá
+  - je tam někde nekonečná smyčka?
+
+- Okej, co se vykašlat na kompletní procházení všech možných tahů a omezit se
+  na něco takovéhleho:
+. AI umí vynést nový stack
+. AI umí využít volné karty (okrajové karty ze stacků, které mají >=4 karty)
+. AI umí přiložit karty k existujícímu stacku
+  - Zkouší n-tice až do MAX_DEPTH přikládat ke stackům. Pokud se to s nějakým
+    balíčkem povede, zařadí ho znovu do fronty na ozkoušení.
+
+for n in range(MAX_DEPTH, 0, -1):
+    if n <= 3:
+        vyloz_vsechny_stacky(n karet z ruky, 3-n ze stolu)
+    priloz_vsechny_n_tice(n) # nepouziva karty ze stolu
+
+- Z tohohle vidim, ze mi dava smysl, aby MAX_DEPTH byl <= 3
+- Ale možná budu potřebovat ještě nějaký jiný throttling
 
 
 ai cíle:
 x Našeptávej cokoliv validního
 x Našeptávej i možnosti, jak přiložit karty k existujícím stackům
 - Nejprve se rozhodni, kolik karet chceš ze stolu zvednout, pak pracuj i s nimi
+- Variabilní MAX_DEPTH vůči počtu karet v ruce a na stole
 
 Todo list (speedrun k tomu, aby se hra dala hrát):
 x Přesouvání karet mezi stacky
