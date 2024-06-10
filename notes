@@ -198,8 +198,8 @@ momentálně řeším:
 . AI umí vynést nový stack
 . AI umí využít volné karty (okrajové karty ze stacků, které mají >=4 karty)
 . AI umí přiložit karty k existujícímu stacku
-  - Zkouší n-tice až do MAX_DEPTH přikládat ke stackům. Pokud se to s nějakým
-    balíčkem povede, zařadí ho znovu do fronty na ozkoušení.
+  - Přikládat karty ke stackům. Pokud se povede u nějaké stacku přiložit kartu,
+    přidá ho do fronty k ozkoušení, jestli k němu nejde něco přiložit.
 
 for n in range(MAX_DEPTH, 0, -1):
     if n <= 3:
@@ -210,46 +210,60 @@ for n in range(MAX_DEPTH, 0, -1):
 - Ale možná budu potřebovat ještě nějaký jiný throttling
 
 
-ai cíle:
-x Našeptávej cokoliv validního
-x Našeptávej i možnosti, jak přiložit karty k existujícím stackům
-- Nejprve se rozhodni, kolik karet chceš ze stolu zvednout, pak pracuj i s nimi
-- Variabilní MAX_DEPTH vůči počtu karet v ruce a na stole
+24/06/08
 
-Todo list (speedrun k tomu, aby se hra dala hrát):
-x Přesouvání karet mezi stacky
-  x Karta vypíše, co je, když se na ni klikne
-  x Zobrazení picked up karty
-x Přesouvání karet mezi rukou a stacky
-  x Zobrazování karet v ruce
-  x Picking up z ruky
-x Lízání karet
-x Začátek hry: Rozdání prvních n karet
-x Vypisování počtu karet v balíčku
+- Okej, čas to brzy odevzdat. Budu co nejkonzervativnější a zkusím odevzdat
+  slušnou verzi co nejdříve.
 
-x Střídání tahů
-x Kontrolování, že herní plocha je při předání tahu v poho
-x Střídání tahů i jinak, než s líznutím (kontrola, že něco vyšlo z ruky)
-  x Vymyslet název pro příznak end_turn_button objektu, který by říkal, že na
-    stole je aspoň jedna not freezed karta
-x Zobrazování, že karta je freezed
-x Opravit bug invalidující validní stacky
-x Konec hry
 
-x Bug s velikostí karet ve stacku
-- Bug, že hra spadne, když kliknu na prázdný balíček
-- Co když...
-  - Ruka bude příliš plná ... nám to s Anežkou stačilo, jak je to teď
-  x Stacků bude moc ... prostě tam plácni dost pozic pro stacky
-- Na kartách ve stacku není na všech vidět barva
-- Zakázání přesouvání karet pohybem kolečka myši
+24/06/10
 
-PRVNÍ VERZE:
-- Obdélníkové stacky a karty
-- Vidím oboum hráčům do rukou
-- Bude omezený počet stacků dle velikosti obrazovky
-- 2 hráči
-- Žádní žolíci
+- Potencionální improvement AI kódu: Můžu stacky vždy reprezentovat jako
+  tuples. Pak jsou hashovatelné. Jediná místa, kdy upravuji stacky jsou místa,
+  kde najdu move. Tam se klidně vyplatí zahodit starou tuple a vyrobit novou.
+
+todo:
+x Pokud z big stacku odeberu, musím přepočítat, které stacks jsou big stacks
+x Nenech AI přidávat do stacků, které jsou plné
+x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
+
+
+Todo:
+
+features/fixes:
+- Hezčí počet zbývajících karet
+  - Aspoň "Dobírací balíček, zbývá:"
+- Žádné missing cards
+- Tuples v AI
+-- Pod tuhle linii jdu možná, dle zbývajícího času
+- Chytřejší načítání karet (mohl bych do konstanty dát format string)
+- sort_by_flush pořádně
+- Restorenout "tohle je karta, don't question"
+- Dát AI jméno
+
+redesign:
+- Mohl bych přidat do Game class funkce pro přesouvání karet
+- Konstanty bych mohl dát do config.py, utility func do utility.py, classy do
+  widgets.py, Game do game.py
+- AI přistupuje k _atributům
+  - Dám classám funkci ke getnutí kopie karet (aby bylo jasné, že do objektu
+    samotného se nikdo šťourat nebude)
+- AI nedává přesné instrukce (crucial)
+-- pod tuhle linii nejdu
+- Vykreslování není oddělené od logiky
+  - Ale oddělovat to by bylo možná trochu overengineered. A vlastně je hezké,
+    že AI má vlastní reprezentaci víc suited AIčku.
+
+- Přidat automatické AI
+- Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
+- Dokumentace
+  - Uživatelská
+  - Programátorská
+- ? Mít verzi freeznutou pro windows ?
+- ? Ozkoušet na různých rozlišeních ?
+- Poslat
+
+---
 
 DALŠÍ VERZE:
 - Oddělit logiku a vykreslování

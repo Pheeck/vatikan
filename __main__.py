@@ -45,13 +45,18 @@ COLORS = ("heart", "clover", "spade", "diamond")
 SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 ROWS_OF_STACKS = 2
-COLUMNS_OF_STACKS = 18
+COLUMNS_OF_STACKS = 19
 HAND_PX_HEIGHT = 100
 STACK_PX_MARGINS = 8
 CARD_HEIGHT_WIDTH_RATIO = 4. / 3
 STARTING_HAND_NUM_CARDS = 12
 FONT_NAME = "arial"
 FONT_SIZE = 9
+CARDS_DIR = "cards2"
+DECK_IMG_FILE = "karta.png"
+
+# For not frozen cards. From 0.00 (opaque) to 1.00 (invisible)
+CARD_TRANSPARENCY = 0.20
 
 
 #####################
@@ -81,33 +86,6 @@ def get_biggest_gap(cards):
             max_gap_i = i
             max_difference = difference
     return max_gap_i
-
-def is_cyclic_sequence(cards): # TODO ?Archive? and remove
-    """
-    Do ranks of given cards (class Card) form a gapless cyclic sequence? If
-    yes, return -1. Else return the index i such that cards[i] and cards[i+1]
-    have the biggest rank gap between them.
-
-    Do not consider colors.
-
-    A sorted list must be given.
-    """
-
-    i = get_biggest_gap(cards)
-
-    # There must be no other gaps
-    j = (i + 1) % len(cards)
-    while j != i:
-        rank1 = cards[j].rank
-        rank2 = cards[(j + 1) % len(cards)].rank
-        difference = (RANKS.index(rank2) - RANKS.index(rank1)) % len(cards)
-
-        if difference > 1:
-            return i
-
-        j = (j + 1) % len(cards)
-
-    return -1
 
 def is_triplet(cards):
     """
@@ -213,7 +191,7 @@ class Card:
         if self._frozen:
             self.img.set_alpha(255 * 1.00)
         else:
-            self.img.set_alpha(255 * 0.80) # TODO Konstanta
+            self.img.set_alpha(255 * (1.00 - CARD_TRANSPARENCY))
 
 class Stack:
     def __init__(self, pos, size, missing_card):
@@ -239,7 +217,7 @@ class Stack:
         # Where a = 1/5 * height of a card
 
         a = self._rect.height / (len(RANKS) + 4)
-        self._card_height = a * 5 # TODO Schovat do nejake konstanty?
+        self._card_height = a * 5
         self._card_width = self._card_height / CARD_HEIGHT_WIDTH_RATIO
 
         # But if width of the stack is the limiting factor, compute height
@@ -389,11 +367,25 @@ class Hand:
         self._card_height = self._rect.height
         self._card_width = self._card_height / CARD_HEIGHT_WIDTH_RATIO
 
+        # Dynamic width based on _card_width. Smaller than _card_width when
+        # there are too many cards in hand
+        self._dynamic_card_width = 0
+        self._update_dynamic_card_width()
+
+    def _update_dynamic_card_width(self):
+        if not self._cards:
+            self._dynamic_card_width = self._card_width
+        else:
+            self._dynamic_card_width = min(self._card_width,
+                                           self._rect.width / len(self._cards))
+
     def add(self, card):
         self._cards.append(card)
+        self._update_dynamic_card_width()
 
     def remove(self, card):
         self._cards.remove(card)
+        self._update_dynamic_card_width()
 
     def is_empty(self):
         return len(self._cards) == 0
@@ -405,7 +397,7 @@ class Hand:
 
         pygame.draw.rect(surface, FG_COLOR, self._rect)
 
-        x = self._rect.centerx - len(self._cards) * self._card_width / 2
+        x = self._rect.centerx - len(self._cards) * self._dynamic_card_width / 2
 
         for card in self._cards:
             img = card.img
@@ -419,7 +411,7 @@ class Hand:
             )
             surface.blit(card_surface, pos)
 
-            x += self._card_width
+            x += self._dynamic_card_width
 
     def collidepoint(self, pos):
         return self._rect.collidepoint(pos)
@@ -441,13 +433,13 @@ class Hand:
 
         # hand_x and hand_y is at the top left corner of the leftmost card
         hand_x = self._rect.x + \
-                 (self._rect.w - self._card_width * card_num) / 2
+                 (self._rect.w - self._dynamic_card_width * card_num) / 2
         hand_y = self._rect.y
 
         x -= hand_x
         y -= hand_y
 
-        i = int(x / self._card_width)
+        i = int(x / self._dynamic_card_width)
         if i < 0 or i >= card_num:
             return None
         else:
@@ -519,6 +511,9 @@ class Deck:
             True,
             TEXT_COLOR
         )
+
+    def is_empty(self):
+        return not self._cards
 
     def pop(self):
         if self._cards:
@@ -622,7 +617,7 @@ class EndTurnButton:
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
-        deck_img = pygame.image.load("karta.png") # TODO
+        deck_img = pygame.image.load(DECK_IMG_FILE)
 
         # Load card images
         card_imgs = {}
@@ -631,9 +626,9 @@ class Game:
             for rank in RANKS:
                 # TODO Nejak chytreji
                 card_imgs[color][rank] = pygame.image.load(
-                    "cards/card_" + str(((RANKS.index(rank) + 1) % len(RANKS)) + 1) + "_" + color + ".png"
+                    CARDS_DIR + "/card_" + str(((RANKS.index(rank) + 1) % len(RANKS)) + 1) + "_" + color + ".png"
                 )
-        missing_img = pygame.image.load("karta.png") # TODO
+        missing_img = pygame.image.load(DECK_IMG_FILE)
 
         missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
 
@@ -766,12 +761,14 @@ class Game:
     def process_mouse_click(self, pos):
         if self.end_turn_button.collidepoint(pos):
             # Ending the turn
-            # TODO Chytreji? Duplikuji tady logiku mezi Game a EndTurnButton
             if self.board_is_valid():
                 if self.board_is_frozen():
-                    card = self.deck.pop()
-                    self.hand.add(card)
-                self.end_turn()
+                    if not self.deck.is_empty():
+                        card = self.deck.pop()
+                        self.hand.add(card)
+                        self.end_turn()
+                else:
+                    self.end_turn()
         else:
             if self.pickup.has_card():
                 if self.hand.collidepoint(pos):
@@ -802,12 +799,16 @@ class Game:
                                 stack.remove(card)
                                 self.pickup.put(card)
 
-        if self.board_is_valid(): # TODO Chytreji?
+        if self.board_is_valid():
             self.end_turn_button.set_board_valid()
         else:
             self.end_turn_button.unset_board_valid()
         if self.board_is_frozen():
-            self.end_turn_button.set_card_draw_needed()
+            if self.deck.is_empty():
+                self.end_turn_button.unset_card_draw_needed()
+                self.end_turn_button.unset_board_valid()
+            else:
+                self.end_turn_button.set_card_draw_needed()
         else:
             self.end_turn_button.unset_card_draw_needed()
 
@@ -841,7 +842,7 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
-                if event.type == pygame.MOUSEBUTTONUP:
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     pos = pygame.mouse.get_pos()
                     self.process_mouse_click(pos)
             self.draw()
