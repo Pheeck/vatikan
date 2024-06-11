@@ -228,27 +228,35 @@ x Nenech AI přidávat do stacků, které jsou plné
 x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
 
 
+24/06/11
+
+-
+
+
 Todo:
 
 features/fixes:
 - Hezčí počet zbývajících karet
   - Aspoň "Dobírací balíček, zbývá:"
-- Žádné missing cards
-- Tuples v AI
+- ?is_valid_stack nějak chytřeji?
 -- Pod tuhle linii jdu možná, dle zbývajícího času
+- Tuples v AI
+- Žádné missing cards
 - Chytřejší načítání karet (mohl bych do konstanty dát format string)
 - sort_by_flush pořádně
 - Restorenout "tohle je karta, don't question"
 - Dát AI jméno
 
 redesign:
-- Mohl bych přidat do Game class funkce pro přesouvání karet
-- Konstanty bych mohl dát do config.py, utility func do utility.py, classy do
+- AI nedává přesné instrukce (crucial)
+x Konstanty bych mohl dát do config.py, utility func do utility.py, classy do
   widgets.py, Game do game.py
+- Mohl bych přidat do Game class funkce pro přesouvání karet
 - AI přistupuje k _atributům
   - Dám classám funkci ke getnutí kopie karet (aby bylo jasné, že do objektu
     samotného se nikdo šťourat nebude)
-- AI nedává přesné instrukce (crucial)
+- ?je takové nehezké mít uloženo "is frozen" v Card, což má být classa
+  nepatřící do ui, logiky ani ai?
 -- pod tuhle linii nejdu
 - Vykreslování není oddělené od logiky
   - Ale oddělovat to by bylo možná trochu overengineered. A vlastně je hezké,
@@ -261,7 +269,8 @@ redesign:
   - Programátorská
 - ? Mít verzi freeznutou pro windows ?
 - ? Ozkoušet na různých rozlišeních ?
-- Poslat
+- Playtesting (můžu jako prokrastinaci při učení)
+- Odevzdat
 
 ---
 

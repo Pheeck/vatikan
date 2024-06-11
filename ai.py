@@ -1,66 +1,49 @@
 """
-Experimental AI for the vatikan game. Looks at game state and prints suggested
-moves into standard output.
+AI for the game.
+
+This file contains the logic behind AI and functions (called from the Game
+class) to
+- Given a state of the game, let the AI generate moves
+- Given moves, print them in human-readable form onto stdout
+- Given moves and access to the game state, apply the moves
 """
 
 import itertools
-import __main__ as vatikan
 
-def sorted_by_flush(stack):
-    """
-    Given a list of at least 3 cards which form a cyclic contiguous sequence,
-    return the list ordered in such way that the cards form a flush.
-    """
-    assert len(stack) >= 3
+from config import *
+from card import Card
+import util
+import widgets
 
-    if vatikan.is_triplet(stack):
-        return [c for c in stack]
-    else:
-        return vatikan.attempt_construct_flush(stack, None)
 
-def sort_by_flush(stack):
-    # TODO Udelej tohle poradne
-    foo = sorted_by_flush(stack)
-    for i in range(len(stack)):
-        stack[i] = foo[i]
-
-def card_to_string(card):
-    return str(card.color) + str(card.rank)
-
-def stack_to_string(stack):
-    stack = sorted_by_flush(stack)
-    l = [card_to_string(c) for c in stack]
-    return ", ".join(l)
+######################
+# INTERNAL FUNCTIONS #
+######################
 
 def print_stack_suggestion(stack, *from_stacks):
     """ 
-    Print a suggestion to create a new stack. If there are stacks 
+    Print a suggestion to create a new stack. Optionally specify that some of
+    the cards should be taken from existing stacks.
     """
     print("Suggested move: Put a new stack " +
-          f"{stack_to_string(stack)} on the board")
+          f"{util.stack_to_string(stack)} on the board")
     if from_stacks:
         print("Use cards from stacks " +
-              f'{"; ".join([stack_to_string(s) for s in from_stacks])}')
+              f'{"; ".join([util.stack_to_string(s) for s in from_stacks])}')
 
 def print_card_suggestion(card, stack):
     """
     Print a suggestion to add a card from hand to a stack.
     """
     print("Suggested move: Add card " +
-          f"{card_to_string(card)} to " +
-          f"the stack {stack_to_string(stack)}")
+          f"{util.card_to_string(card)} to " +
+          f"the stack {util.stack_to_string(stack)}")
 
 def get_subsets(x, n):
     """
     Return set of all n-element subsets of x (subsets represented as lists)
     """
     return set(itertools.combinations(x, n))
-
-def is_valid_stack(cards):
-    mock_stack = vatikan.Stack((0, 0), (0, 0), None)
-    mock_stack._cards = cards
-    mock_stack.reconstruct()
-    return mock_stack.is_valid()
 
 def get_big_stacks(stacks):
     """
@@ -69,8 +52,19 @@ def get_big_stacks(stacks):
     """
     return [s for s in stacks if len(s) >= 4]
 
+def is_valid_stack(cards):
+    mock_stack = widgets.Stack((0, 0), (0, 0), None)
+    mock_stack._cards = cards
+    mock_stack.reconstruct()
+    return mock_stack.is_valid()
+
 def is_full_stack(stack):
-    return len(stack) == len(vatikan.RANKS)
+    return len(stack) == len(RANKS)
+
+
+##########
+# AI API #
+##########
 
 def suggest_move(game):
     print(f"Player: {game.player}")
@@ -83,7 +77,7 @@ def suggest_move(game):
     stacks = []
     for s in game.stacks:
         if s._cards:
-            stacks.append(sorted_by_flush(s._cards))
+            stacks.append(util.sorted_by_flush(s._cards))
 
     # Get big stacks (stacks of 4 cards or more)
     big_stacks = get_big_stacks(stacks)
@@ -111,7 +105,7 @@ def suggest_move(game):
                 # Found a valid move!
                 print_stack_suggestion(triplet)
                 hand -= set(triplet)
-                stacks.append(sorted_by_flush(list(triplet)))
+                stacks.append(util.sorted_by_flush(list(triplet)))
                 found_a_move = True
 
     # 1b) Try to create stacks where 2 cards are from hand and 1 is from a big
@@ -151,7 +145,7 @@ def suggest_move(game):
                         # Found a valid move!
                         print_stack_suggestion(stack, big_stack)
                         hand -= set(card_duplet)
-                        stacks.append(sorted_by_flush(stack))
+                        stacks.append(util.sorted_by_flush(stack))
                         if stack == stack1:
                             big_stack.pop(0)
                         else:
@@ -203,7 +197,7 @@ def suggest_move(game):
                         # Found a valid move!
                         print_stack_suggestion(stack, big_stack1, big_stack2)
                         hand.remove(card)
-                        stacks.append(sorted_by_flush(stack))
+                        stacks.append(util.sorted_by_flush(stack))
                         if stack == stack1:
                             big_stack1.pop(0)
                             big_stack2.pop(0)
@@ -237,7 +231,7 @@ def suggest_move(game):
                 # Found a valid move!
                 print_card_suggestion(card, stack)
                 stack.append(card)
-                sort_by_flush(stack)
+                util.sort_by_flush(stack)
                 hand.remove(card)
                 worklist.append(stack)
                 break
