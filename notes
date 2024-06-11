@@ -230,7 +230,9 @@ x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
 
 24/06/11
 
--
+- Bug ai.py:307 přidávání karty k neexistujícímu stacku
+  - Možná neexistuje stack s konkrétně těmito kartami ale existuje stack s
+    kartami stejného ranku a barvy?
 
 
 Todo:
@@ -238,10 +240,12 @@ Todo:
 features/fixes:
 - Hezčí počet zbývajících karet
   - Aspoň "Dobírací balíček, zbývá:"
+- Winning screen větší písmena
 - ?is_valid_stack nějak chytřeji?
 -- Pod tuhle linii jdu možná, dle zbývajícího času
 x sort_by_flush pořádně
 x Tuples v AI
+- Replay AI moves
 - Žádné missing cards
 - Chytřejší načítání karet (mohl bych do konstanty dát format string)
 - Restorenout "tohle je karta, don't question"
@@ -251,7 +255,7 @@ redesign:
 x Konstanty bych mohl dát do config.py, utility func do utility.py, classy do
   widgets.py, Game do game.py
 x AI nedává přesné instrukce (crucial)
-- Mohl bych přidat do Game class funkce pro přesouvání karet
+x Mohl bych přidat do Game class funkce pro přesouvání karet
 - AI přistupuje k _atributům
   - Dám classám funkci ke getnutí kopie karet (aby bylo jasné, že do objektu
     samotného se nikdo šťourat nebude)
@@ -262,8 +266,9 @@ x AI nedává přesné instrukce (crucial)
   - Ale oddělovat to by bylo možná trochu overengineered. A vlastně je hezké,
     že AI má vlastní reprezentaci víc suited AIčku.
 
-- Přidat automatické AI
+x Přidat automatické AI
 - Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
+- Cleanup
 - Dokumentace
   - Uživatelská
   - Programátorská

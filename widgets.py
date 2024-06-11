@@ -54,18 +54,25 @@ class Stack:
 
         self.missing_card = missing_card
 
+    def is_empty(self):
+        return not self._cards
+
+    def size(self):
+        return len(self._cards)
+
+    def has_card(self, card):
+        return card in self._cards
+
     def add(self, card):
         """
-        Add a card into the stack. Return True if card was successfully added.
-        Return False if the stack rejected the card (for example it may already
-        contain a card of the same color and rank).
+        Add a card onto the stack.
         """
         self._cards.append(card)
         self.reconstruct()
     
     def remove(self, card):
         """
-        Remove given card from stack
+        Remove given card from stack.
         """
         self._cards.remove(card)
         self.reconstruct()
@@ -204,6 +211,9 @@ class Hand:
         else:
             self._dynamic_card_width = min(self._card_width,
                                            self._rect.width / len(self._cards))
+
+    def has_card(self, card):
+        return card in self._cards
 
     def add(self, card):
         self._cards.append(card)

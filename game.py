@@ -7,6 +7,7 @@ This file contains the main class of this program.
 import pygame
 import pygame.image
 import pygame.font
+from random import randint
 
 from config import *
 from card import Card
@@ -155,52 +156,9 @@ class Game:
             stack.freeze()
 
         self.end_turn_button.set_player(self.player)
-
         print(f"\nPlayer {self.player}") # DEBUG
-        ai_moves = ai.generate_moves(self)
-        ai.print_moves(ai_moves) # DEBUG
 
-    def process_mouse_click(self, pos):
-        if self.end_turn_button.collidepoint(pos):
-            # Ending the turn
-            if self.board_is_valid():
-                if self.board_is_frozen():
-                    if not self.deck.is_empty():
-                        card = self.deck.pop()
-                        self.hand.add(card)
-                        self.end_turn()
-                else:
-                    self.end_turn()
-        else:
-            if self.pickup.has_card():
-                if self.hand.collidepoint(pos):
-                    # Deselecting a card from the hand
-                    card = self.pickup.get()
-                    if not card.is_frozen():
-                        self.hand.add(card)
-                        self.pickup.pop()
-                else:
-                    # Putting a card onto a stack
-                    for stack in self.stacks:
-                        if stack.collidepoint(pos):
-                            card = self.pickup.pop()
-                            stack.add(card)
-            else:
-                if self.hand.collidepoint(pos):
-                    # Selecting a card from the hand
-                    card = self.hand.card_at_point(pos)
-                    if card:
-                        self.hand.remove(card)
-                        self.pickup.put(card)
-                else:
-                    # Selecting a card from a stack
-                    for stack in self.stacks:
-                        if stack.collidepoint(pos):
-                            card = stack.card_at_point(pos)
-                            if card:
-                                stack.remove(card)
-                                self.pickup.put(card)
-
+    def update_end_turn_button(self):
         if self.board_is_valid():
             self.end_turn_button.set_board_valid()
         else:
@@ -213,6 +171,146 @@ class Game:
                 self.end_turn_button.set_card_draw_needed()
         else:
             self.end_turn_button.unset_card_draw_needed()
+
+    ########################################
+    # API FOR MANIPULATING WITH GAME STATE #
+    ########################################
+
+    def try_end_turn(self):
+        """
+        Try to end the turn. This can have 3 results:
+        - The turn just ends
+        - The current player draws a card and the turn ends
+        - The turn doesn't end
+
+        If the turn ends, return True, otherwise return False
+        """
+        if self.board_is_valid():
+            if self.board_is_frozen():
+                if not self.deck.is_empty():
+                    # Draw a card first
+                    card = self.deck.pop()
+                    self.hand.add(card)
+                    self.end_turn()
+                    self.update_end_turn_button()
+                    return True
+                else:
+                    return False
+            else:
+                self.end_turn()
+                self.update_end_turn_button()
+                return True
+        return False
+
+    def try_take_card_from_stack(self, card, stack):
+        """
+        Try to take a given card from a given stack widget and put it into the
+        pickup area.
+
+        Returns True on success, otherwise False
+        """
+        if self.pickup.has_card() or not stack.has_card(card):
+            return False
+        stack.remove(card)
+        self.pickup.put(card)
+        self.update_end_turn_button()
+        return True
+
+    def try_take_card_from_hand(self, card):
+        """
+        Try to take a given card from hand and put it into the pickup area.
+
+        Returns True on success, otherwise False
+        """
+        if self.pickup.has_card() or not self.hand.has_card(card):
+            return False
+        self.hand.remove(card)
+        self.pickup.put(card)
+        self.update_end_turn_button()
+        return True
+
+    def try_put_card_onto_stack(self, stack):
+        """
+        Try to take the card in the pickup area and put it onto a given stack.
+
+        Returns True on success, otherwise False
+        """
+        if not self.pickup.has_card():
+            return False
+        stack.add(self.pickup.pop())
+        self.update_end_turn_button()
+        return True
+
+    def try_put_card_into_hand(self):
+        """
+        Try to take the card in the pickup area and put it into hand.
+
+        Returns True on success, otherwise False
+        """
+        if not self.pickup.has_card() or self.pickup.get().is_frozen():
+            return False
+        self.hand.add(self.pickup.pop())
+        self.update_end_turn_button()
+        return True
+
+    def find_stack_containing_cards(self, cards):
+        """
+        Try to find a Stack widget containing exactly Card objects present in
+        the given cards list. Assume no card is present twice in the cards
+        list. Assume that for each Stack widget, no card is present twice in
+        it.
+
+        Return the Stack widget on success or None on failure.
+        """
+        for stack in self.stacks:
+            if len(cards) != stack.size():
+                continue
+
+            this_one = True
+            for card in cards:
+                if not stack.has_card(card):
+                    this_one = False
+                    break
+
+            if this_one:
+                return stack
+
+        return None
+
+    def get_random_empty_stack(self):
+        """
+        Return a random empty Stack widget or None if there aren't any.
+        """
+        empty_stacks = [s for s in self.stacks if s.is_empty()]
+        return empty_stacks[randint(0, len(empty_stacks) - 1)]
+
+    #####################################
+    # MOUSE, DRAWING AND MAIN GAME LOOP #
+    #####################################
+
+    def process_mouse_click(self, pos):
+        if self.end_turn_button.collidepoint(pos):
+            self.try_end_turn()
+        else:
+            if self.pickup.has_card(): # From pickup
+                if self.hand.collidepoint(pos):
+                    self.try_put_card_into_hand()
+                else:
+                    for stack in self.stacks:
+                        if stack.collidepoint(pos):
+                            self.try_put_card_onto_stack(stack)
+                            break
+            else: # To pickup
+                if self.hand.collidepoint(pos):
+                    card = self.hand.card_at_point(pos)
+                    if card:
+                        self.try_take_card_from_hand(card)
+                else:
+                    for stack in self.stacks:
+                        if stack.collidepoint(pos):
+                            card = stack.card_at_point(pos)
+                            if card:
+                                self.try_take_card_from_stack(card, stack)
 
     def draw(self):
         self.screen.fill(BG_COLOR)
@@ -244,8 +342,15 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
-                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                if self.player == 1 and event.type == pygame.MOUSEBUTTONUP \
+                        and event.button == 1: # DEBUG
                     pos = pygame.mouse.get_pos()
                     self.process_mouse_click(pos)
+
+            if self.player == 2: # DEBUG
+                moves = ai.generate_moves(self)
+                ai.print_moves(moves)
+                ai.apply_moves(moves, self)
+
             self.draw()
             clock.tick(FPS)

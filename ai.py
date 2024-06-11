@@ -71,6 +71,9 @@ def generate_moves(game):
     Given the state of the game, let the AI generate moves it thinks will get
     the most cards from the hand on the board.
 
+    Assumes a turn has just ended so there are no unfrozen cards on the board
+    and the pickup area is empty.
+
     The moves are represented by a list of this format:
     [
         ("add card to stack", card_from_hand, stack),
@@ -290,6 +293,38 @@ def print_moves(moves):
     print("Suggested move: End turn")
 
 def apply_moves(moves, game):
-    # TODO Comment
+    """
+    Given moves outputed by generate_moves(), make the moves!
+    """
 
-    pass
+    # TODO Když něco selže, ohlaš to a nespadni
+
+    for move in moves:
+        if move[0] == "add card to stack":
+            card = move[1]
+            stack = game.find_stack_containing_cards(move[2])
+            game.try_take_card_from_hand(card)
+            game.try_put_card_onto_stack(stack)
+        else: # Form new stack
+            cards = move[1]
+            new_stack = game.get_random_empty_stack()
+
+            stack1 = None
+            stack2 = None
+            if len(move) >= 3:
+                stack1 = game.find_stack_containing_cards(move[2])
+            if len(move) >= 4:
+                stack2 = game.find_stack_containing_cards(move[3])
+
+            for card in cards:
+                # Try to find the card first in hand then in stack1 then in
+                # stack2
+                if not game.try_take_card_from_hand(card) \
+                        and not stack1 is None:
+                    if not game.try_take_card_from_stack(card, stack1) \
+                            and not stack2 is None:
+                        game.try_take_card_from_stack(card, stack2)
+
+                game.try_put_card_onto_stack(new_stack)
+
+    game.try_end_turn()
