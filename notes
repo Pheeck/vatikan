@@ -240,17 +240,17 @@ features/fixes:
   - Aspoň "Dobírací balíček, zbývá:"
 - ?is_valid_stack nějak chytřeji?
 -- Pod tuhle linii jdu možná, dle zbývajícího času
-- Tuples v AI
+x sort_by_flush pořádně
+x Tuples v AI
 - Žádné missing cards
 - Chytřejší načítání karet (mohl bych do konstanty dát format string)
-- sort_by_flush pořádně
 - Restorenout "tohle je karta, don't question"
 - Dát AI jméno
 
 redesign:
-- AI nedává přesné instrukce (crucial)
 x Konstanty bych mohl dát do config.py, utility func do utility.py, classy do
   widgets.py, Game do game.py
+x AI nedává přesné instrukce (crucial)
 - Mohl bych přidat do Game class funkce pro přesouvání karet
 - AI přistupuje k _atributům
   - Dám classám funkci ke getnutí kopie karet (aby bylo jasné, že do objektu

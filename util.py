@@ -63,6 +63,8 @@ def attempt_construct_flush(cards, missing_card):
     the flush is not possible (there are less than 3 cards, there are multiple
     cards of same rank or not all cards are of the same color), return None.
 
+    Returns a tuple.
+
     missing_card ... the singleton Card object representing a missing card
     """
     flush = sorted_by_rank(cards)
@@ -109,25 +111,23 @@ def attempt_construct_flush(cards, missing_card):
         last_card = card
         result.append(card)
 
-    return result
+    return tuple(result)
 
 def sorted_by_flush(stack):
     """
-    Given a list of at least 3 cards which form a cyclic contiguous sequence,
-    return the list ordered in such way that the cards form a flush.
+    Given a list/tuple of at least 3 cards which form a cyclic contiguous sequence,
+    return the cards in a tuple ordered by the sequence.
+
+    Example:
+    IN: K 2 A 4 3
+    OUT: K A 2 3 4
     """
     assert len(stack) >= 3
 
     if is_triplet(stack):
-        return [c for c in stack]
+        return tuple(stack)
     else:
         return attempt_construct_flush(stack, None)
-
-def sort_by_flush(stack):
-    # TODO Udelej tohle poradne
-    foo = sorted_by_flush(stack)
-    for i in range(len(stack)):
-        stack[i] = foo[i]
 
 def card_to_string(card):
     return str(card.color) + str(card.rank)

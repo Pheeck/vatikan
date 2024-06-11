@@ -156,7 +156,9 @@ class Game:
 
         self.end_turn_button.set_player(self.player)
 
-        ai.suggest_move(self) # DEBUG
+        print(f"\nPlayer {self.player}") # DEBUG
+        ai_moves = ai.generate_moves(self)
+        ai.print_moves(ai_moves) # DEBUG
 
     def process_mouse_click(self, pos):
         if self.end_turn_button.collidepoint(pos):
