@@ -23,9 +23,30 @@ commit to placing cards on the board by ending your turn.
 
 import pygame
 
+from menu import Menu
 from game import Game
+from config import *
 
 if __name__ == "__main__":
     pygame.init()
-    game = Game()
+
+    # Load images
+    deck_img = pygame.image.load(DECK_IMG_FILE)
+    missing_img = pygame.image.load(DECK_IMG_FILE)
+    card_imgs = {}
+    for color in COLORS:
+        card_imgs[color] = {}
+        for rank in RANKS:
+            card_imgs[color][rank] = pygame.image.load(
+                CARDS_DIR + "/card_" \
+                + str(((RANKS.index(rank) + 1) % len(RANKS)) + 1) \
+                + "_" + color + ".png"
+            )
+
+    screen = pygame.display.set_mode(SCREEN_SIZE)
+
+    menu = Menu(screen)
+    gamemode = menu.run()
+
+    game = Game(gamemode, screen, deck_img, missing_img, card_imgs)
     game.run()

@@ -15,25 +15,16 @@ import widgets
 import ai
 
 class Game:
-    def __init__(self):
-        self.screen = pygame.display.set_mode(SCREEN_SIZE)
-        deck_img = pygame.image.load(DECK_IMG_FILE)
-
-        # Load card images
-        card_imgs = {}
-        for color in COLORS:
-            card_imgs[color] = {}
-            for rank in RANKS:
-                # TODO Nejak chytreji
-                card_imgs[color][rank] = pygame.image.load(
-                    CARDS_DIR + "/card_" + str(((RANKS.index(rank) + 1) % len(RANKS)) + 1) + "_" + color + ".png"
-                )
-        missing_img = pygame.image.load(DECK_IMG_FILE)
+    def __init__(self, gamemode, screen, deck_img, missing_img, card_imgs):
+        self.gamemode = gamemode
+        self.screen = screen
 
         missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
 
         # Setup font
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+        self.medium_font = pygame.font.SysFont(FONT_NAME, MEDIUM_FONT_SIZE)
+        self.big_font = pygame.font.SysFont(FONT_NAME, BIG_FONT_SIZE)
 
         # Setup board
         pickup_width = HAND_PX_HEIGHT * 3 / 4
@@ -44,7 +35,8 @@ class Game:
         )
         self.hand1 = widgets.Hand(
                 (pickup_width + STACK_PX_MARGINS, SCREEN_SIZE[1] - HAND_PX_HEIGHT),
-                (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT)
+                (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT),
+                False
         )
         # The top player
         self.pickup2 = widgets.PickUpArea(
@@ -53,7 +45,9 @@ class Game:
         )
         self.hand2 = widgets.Hand(
                 (pickup_width + STACK_PX_MARGINS, 0),
-                (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT)
+                (SCREEN_SIZE[0] - pickup_width, HAND_PX_HEIGHT),
+                gamemode == PLAYER_VS_AI,
+                deck_img
         )
 
         stack_width = (SCREEN_SIZE[0] - (COLUMNS_OF_STACKS + 1) * STACK_PX_MARGINS) / \
@@ -81,7 +75,7 @@ class Game:
                 (deck_width, deck_height),
                 card_imgs,
                 deck_img,
-                self.font
+                self.medium_font
         )
         button_width = stack_width
         button_height = (stack_height - deck_height) / 2 - STACK_PX_MARGINS
@@ -129,7 +123,7 @@ class Game:
 
     def select_winner(self, player):
         self.winner = player
-        s = self.font.render(f"Player {player} won", True, TEXT_COLOR)
+        s = self.big_font.render(f"PLAYER {player} WON", True, TEXT_COLOR)
         x = self.screen.get_width() / 2 - s.get_width() / 2
         y = self.screen.get_height() / 2 - s.get_height() / 2
         self.win_screen.blit(s, (x, y))
@@ -158,7 +152,6 @@ class Game:
             self.player = 1
             self.pickup = self.pickup1
             self.hand = self.hand1
-        self.end_turn_button.set_player(self.player)
         print(f"\nPlayer {self.player}")
 
         # Freeze all cards on the board
@@ -174,6 +167,12 @@ class Game:
             self.end_turn_button.set_card_draw_needed()
         else:
             self.end_turn_button.unset_card_draw_needed()
+
+        if self.gamemode == AI_VS_AI:
+            player = "Albert BOT" if self.player == 1 else "Zuzka BOT"
+            self.end_turn_button.set_player_name(player)
+        else:
+            self.end_turn_button.set_player_name(f"hrac {self.player}")
 
     ########################################
     # API FOR MANIPULATING WITH GAME STATE #
@@ -284,6 +283,31 @@ class Game:
         empty_stacks = [s for s in self.stacks if s.is_empty()]
         return empty_stacks[randint(0, len(empty_stacks) - 1)]
 
+    def get_state_copy(self):
+        """
+        Return a tuple representing the current state of the game. 
+
+        (
+            set of Cards in hand
+            set of *nonempty* stacks {
+                stack1 (tuple of Cards),
+                stack2 (tuple of Cards),
+                ...
+            }
+        )
+
+        Intended for use in AI.
+        """
+        hand = self.hand.get_state_copy()
+
+        stacks = set()
+        for stack in self.stacks:
+            s = stack.get_state_copy()
+            if s:
+                stacks.add(s)
+
+        return (hand, stacks)
+
     #####################################
     # MOUSE, DRAWING AND MAIN GAME LOOP #
     #####################################
@@ -334,23 +358,43 @@ class Game:
         self.pickup = self.pickup1
         self.hand = self.hand1
 
+        self.update_end_turn_button()
+
         self.draw()
 
         clock = pygame.time.Clock()
+        ai_timer_running = False
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
-                if self.player == 1 and event.type == pygame.MOUSEBUTTONUP \
-                        and event.button == 1: # DEBUG
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     pos = pygame.mouse.get_pos()
-                    self.process_mouse_click(pos)
+                    if self.gamemode == PLAYER_VS_PLAYER:
+                        self.process_mouse_click(pos)
+                    elif self.gamemode == PLAYER_VS_AI:
+                        if self.player == 1:
+                            self.process_mouse_click(pos)
+                    else: # gamemode AI_VS_AI
+                        pass
+                if event.type == pygame.USEREVENT:
+                    ai_timer_running = False
+                    moves = ai.generate_moves(self)
+                    ai.print_moves(moves)
+                    ai.apply_moves(moves, self)
 
-            if self.player == 2: # DEBUG
+            if self.gamemode == PLAYER_VS_AI and self.player == 2:
                 moves = ai.generate_moves(self)
                 ai.print_moves(moves)
                 ai.apply_moves(moves, self)
+
+            if self.gamemode == AI_VS_AI \
+                    and not ai_timer_running \
+                    and self.winner is None:
+                event = pygame.event.Event(pygame.USEREVENT)
+                pygame.time.set_timer(event, AI_VS_AI_TURN_DELAY, loops=1)
+                ai_timer_running = True
 
             self.draw()
             clock.tick(FPS)

@@ -103,19 +103,10 @@ def generate_moves(game):
     # and therefore may occur twice in the hand. However, this game actually
     # represent each occurence of the same card as a different object.
 
-    # Get stacks. Only nonempty ones. Make copies of the stacks so that the AI
-    # computations don't interfere with the game. Make sure the stacks are
-    # sorted.
-    stacks = set()
-    for s in game.stacks:
-        if s._cards:
-            stacks.add(tuple(util.sorted_by_flush(s._cards)))
+    hand, stacks = game.get_state_copy()
 
     # Get big stacks (stacks of 4 cards or more)
     big_stacks = get_big_stacks(stacks)
-
-    # Get hand
-    hand = set(game.hand._cards)
 
     # 1) From cards in hand, try to create as many new stacks as possible
 

@@ -9,6 +9,12 @@ COLORS = ("heart", "clover", "spade", "diamond")
 SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 STARTING_HAND_NUM_CARDS = 12
+AI_VS_AI_TURN_DELAY = 1000
+
+# Gamemode constants
+PLAYER_VS_PLAYER = 0
+PLAYER_VS_AI = 1
+AI_VS_AI = 2
 
 # General graphics
 SCREEN_SIZE = (1440, 900)
@@ -32,7 +38,9 @@ CARD_HEIGHT_WIDTH_RATIO = 4. / 3
 # UI font
 FONT_NAME = "arial"
 FONT_SIZE = 9
+MEDIUM_FONT_SIZE = 18
+BIG_FONT_SIZE = 27
 
 # Files
 CARDS_DIR = "cards2"
-DECK_IMG_FILE = "karta.png"
+DECK_IMG_FILE = "back.png"

@@ -235,40 +235,16 @@ x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
     kartami stejného ranku a barvy?
 
 
+24/06/12
+
+-
+
+
 Todo:
-
-features/fixes:
-- Hezčí počet zbývajících karet
-  - Aspoň "Dobírací balíček, zbývá:"
-- Winning screen větší písmena
-- ?is_valid_stack nějak chytřeji?
--- Pod tuhle linii jdu možná, dle zbývajícího času
-x sort_by_flush pořádně
-x Tuples v AI
-- Replay AI moves
-- Žádné missing cards
-- Chytřejší načítání karet (mohl bych do konstanty dát format string)
-- Restorenout "tohle je karta, don't question"
-- Dát AI jméno
-
-redesign:
-x Konstanty bych mohl dát do config.py, utility func do utility.py, classy do
-  widgets.py, Game do game.py
-x AI nedává přesné instrukce (crucial)
-x Mohl bych přidat do Game class funkce pro přesouvání karet
-- AI přistupuje k _atributům
-  - Dám classám funkci ke getnutí kopie karet (aby bylo jasné, že do objektu
-    samotného se nikdo šťourat nebude)
-- ?je takové nehezké mít uloženo "is frozen" v Card, což má být classa
-  nepatřící do ui, logiky ani ai?
--- pod tuhle linii nejdu
-- Vykreslování není oddělené od logiky
-  - Ale oddělovat to by bylo možná trochu overengineered. A vlastně je hezké,
-    že AI má vlastní reprezentaci víc suited AIčku.
-
-x Přidat automatické AI
-- Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
+x Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
 - Cleanup
+  - Věci, co už mám zapsané
+  - Hledat v kódu TODOs a DEBUGs
 - Dokumentace
   - Uživatelská
   - Programátorská
@@ -276,6 +252,22 @@ x Přidat automatické AI
 - ? Ozkoušet na různých rozlišeních ?
 - Playtesting (můžu jako prokrastinaci při učení)
 - Odevzdat
+
+cleanup:
+x Winning screen větší písmena
+x Hezčí počet zbývajících karet
+x AI přistupuje k _atributům
+- is_valid_stack nějak chytřeji
+- Žádné missing cards
+
+optional:
+x Dát AI jméno
+x Chytřejší načítání karet (mohl bych do konstanty dát format string)
+- AI panic
+- je takové nehezké mít uloženo "is frozen" v Card, což má být classa
+  nepatřící do ui, logiky ani ai
+- Replay AI moves
+- Restorenout "tohle je karta, don't question"
 
 ---
 
