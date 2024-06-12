@@ -32,7 +32,6 @@ if __name__ == "__main__":
 
     # Load images
     deck_img = pygame.image.load(DECK_IMG_FILE)
-    missing_img = pygame.image.load(DECK_IMG_FILE)
     card_imgs = {}
     for color in COLORS:
         card_imgs[color] = {}
@@ -48,5 +47,5 @@ if __name__ == "__main__":
     menu = Menu(screen)
     gamemode = menu.run()
 
-    game = Game(gamemode, screen, deck_img, missing_img, card_imgs)
+    game = Game(gamemode, screen, deck_img, card_imgs)
     game.run()

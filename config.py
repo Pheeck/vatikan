@@ -6,10 +6,9 @@ This file contains global constants.
 
 # Game logic
 COLORS = ("heart", "clover", "spade", "diamond")
-SPECIAL_COLOR = "special" # For missing cards
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 STARTING_HAND_NUM_CARDS = 12
-AI_VS_AI_TURN_DELAY = 1000
+AI_VS_AI_TURN_DELAY = 100
 
 # Gamemode constants
 PLAYER_VS_PLAYER = 0
@@ -42,5 +41,8 @@ MEDIUM_FONT_SIZE = 18
 BIG_FONT_SIZE = 27
 
 # Files
-CARDS_DIR = "cards2"
+CARDS_DIR = "./cards"
 DECK_IMG_FILE = "back.png"
+
+BOT1_NAME = "Albert BOT"
+BOT2_NAME = "Zuzka BOT"

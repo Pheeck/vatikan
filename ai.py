@@ -13,7 +13,6 @@ import itertools
 from config import *
 from card import Card
 import util
-import widgets
 
 
 ######################
@@ -53,13 +52,11 @@ def get_big_stacks(stacks):
     return set([s for s in stacks if len(s) >= 4])
 
 def is_valid_stack(cards):
-    mock_stack = widgets.Stack((0, 0), (0, 0), None)
-    mock_stack._cards = cards
-    mock_stack.reconstruct()
-    return mock_stack.is_valid()
+    foo = util.attempt_construct_valid_stack(cards)
+    return not (foo is None or None in foo)
 
 def is_full_stack(stack):
-    return len(stack) == len(RANKS)
+    return len(stack) >= len(RANKS)
 
 
 ##########
@@ -104,6 +101,12 @@ def generate_moves(game):
     # represent each occurence of the same card as a different object.
 
     hand, stacks = game.get_state_copy()
+
+    # Sort the stacks
+    foo = set()
+    for stack in stacks:
+        foo.add(util.sorted_by_flush(stack))
+    stacks = foo
 
     # Get big stacks (stacks of 4 cards or more)
     big_stacks = get_big_stacks(stacks)

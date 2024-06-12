@@ -20,11 +20,10 @@ from config import *
 from card import Card
 
 class Stack:
-    def __init__(self, pos, size, missing_card):
+    def __init__(self, pos, size):
         """
         pos ... (x, y) coordinates
         size ... (x, y) coordinates
-        missing_card ... the singleton Card object representing a missing card
         """
         self._rect = pygame.Rect(pos, size)
         self._cards = [] # Contains just cards, no missing markers
@@ -52,8 +51,6 @@ class Stack:
             self._card_width = self._rect.w
             self._card_height = self._card_width * CARD_HEIGHT_WIDTH_RATIO
 
-        self.missing_card = missing_card
-
     def is_empty(self):
         return not self._cards
 
@@ -78,36 +75,12 @@ class Stack:
         self.reconstruct()
 
     def reconstruct(self):
-        """
-        Construct _cards_with_missing from _cards and update _valid.
-
-        If _cards form a triplet, _cards_with_missing := _cards. If _cards form
-        a flush (possibly with missing cards), fill missing cards with missing
-        card markers. If neither a triplet nor a flush can be formed from
-        _cards, _cards_with_missing := _cards.
-
-        _valid = True if a triplet or a flush was formed and if a flush was
-        formed, it contained no missing cards. _valid = True also if the stack
-        is empty.
-        """
-        if not self._cards:
-            self._cards_with_missing = []
-            self._is_valid = True
-            return
-
-        if util.is_triplet(self._cards):
+        foo = util.attempt_construct_valid_stack(self._cards)
+        self._is_valid = not (foo is None or None in foo)
+        if foo is None:
             self._cards_with_missing = [c for c in self._cards]
-            self._is_valid = True
-            return
-
-        foo = util.attempt_construct_flush(self._cards, self.missing_card)
-        if not foo is None:
+        else:
             self._cards_with_missing = foo
-            self._is_valid = self.missing_card not in foo
-            return
-
-        self._cards_with_missing = [c for c in self._cards]
-        self._is_valid = False
 
     def is_valid(self):
         return self._is_valid
@@ -141,6 +114,9 @@ class Stack:
         a = self._card_height / 5
 
         for i, card in enumerate(self._cards_with_missing):
+            if card is None: # Skip "missing card" markers
+                continue
+
             img = card.img
             card_surface = pygame.transform.scale(
                 img,
@@ -158,8 +134,7 @@ class Stack:
     def card_at_point(self, pos):
         """
         Return the card from this stack that collides with the point 'pos'. If
-        there is no card, return None. If the card is a missing card marker,
-        also return None.
+        there is no card, return None.
         """
 
         # Note: card_at_point() depends on how the stack is drawn
@@ -186,10 +161,11 @@ class Stack:
             return None
         else:
             card = self._cards_with_missing[i]
-            if card == self.missing_card:
-                return None
-            else:
-                return card
+            while card is None: # "missing card" marker
+                i -= 1
+                assert i >= 0
+                card = self._cards_with_missing[i]
+            return card
 
 class Hand:
     def __init__(self, pos, size, hide_cards, deck_img=None):

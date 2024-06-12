@@ -15,11 +15,9 @@ import widgets
 import ai
 
 class Game:
-    def __init__(self, gamemode, screen, deck_img, missing_img, card_imgs):
+    def __init__(self, gamemode, screen, deck_img, card_imgs):
         self.gamemode = gamemode
         self.screen = screen
-
-        missing_card = Card(SPECIAL_COLOR, RANKS[0], missing_img)
 
         # Setup font
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
@@ -62,8 +60,7 @@ class Game:
                 x = (col + 1) * STACK_PX_MARGINS + col * stack_width
                 y = HAND_PX_HEIGHT + (row + 1) * STACK_PX_MARGINS + row * stack_height
                 self.stacks.append(widgets.Stack((x, y),
-                                                 (stack_width, stack_height),
-                                                 missing_card))
+                                                 (stack_width, stack_height)))
 
         deck_width = stack_width
         deck_height = stack_width * CARD_HEIGHT_WIDTH_RATIO
@@ -169,14 +166,14 @@ class Game:
             self.end_turn_button.unset_card_draw_needed()
 
         if self.gamemode == AI_VS_AI:
-            player = "Albert BOT" if self.player == 1 else "Zuzka BOT"
+            player = BOT1_NAME if self.player == 1 else BOT2_NAME
             self.end_turn_button.set_player_name(player)
         else:
             self.end_turn_button.set_player_name(f"hrac {self.player}")
 
-    ########################################
-    # API FOR MANIPULATING WITH GAME STATE #
-    ########################################
+    ###################################
+    # API FOR MANIPULATING GAME STATE #
+    ###################################
 
     def try_end_turn(self):
         """

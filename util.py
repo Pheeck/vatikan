@@ -56,16 +56,15 @@ def is_triplet(cards):
 
     return True
 
-def attempt_construct_flush(cards, missing_card):
+def attempt_construct_flush(cards):
     """
     Try to construct a flush (see Note2 for definition) from given cards
-    possibly using missing card markers and return the flush. If constructing
-    the flush is not possible (there are less than 3 cards, there are multiple
-    cards of same rank or not all cards are of the same color), return None.
+    possibly using "missing card" markers (None) and return the flush. If
+    constructing the flush is not possible (there are less than 3 cards, there
+    are multiple cards of same rank or not all cards are of the same color),
+    return None.
 
     Returns a tuple.
-
-    missing_card ... the singleton Card object representing a missing card
     """
     flush = sorted_by_rank(cards)
 
@@ -105,13 +104,27 @@ def attempt_construct_flush(cards, missing_card):
 
         # If there is a gap between cards, insert missing markers
         while d > 1:
-            result.append(missing_card)
+            result.append(None)
             d -= 1
 
         last_card = card
         result.append(card)
 
     return tuple(result)
+
+def attempt_construct_valid_stack(cards):
+    """
+    Try to construct a flush or a triplet (see Note2 for definitions) possibly
+    using missing card markers. If possible, return the flush/triplet.
+    Otherwise, return None.
+
+    Returns a tuple.
+    """
+    if len(cards) == 0:
+        return tuple(cards)
+    if is_triplet(cards):
+        return tuple(cards)
+    return attempt_construct_flush(cards)
 
 def sorted_by_flush(stack):
     """
@@ -127,7 +140,7 @@ def sorted_by_flush(stack):
     if is_triplet(stack):
         return tuple(stack)
     else:
-        return attempt_construct_flush(stack, None)
+        return attempt_construct_flush(stack)
 
 def card_to_string(card):
     return str(card.color) + str(card.rank)

@@ -237,14 +237,16 @@ x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
 
 24/06/12
 
--
+- AI panic
+  - Asi není třeba -- v takovém případě prostě AI neprovede, co chtělo provést
+    a bude vidět, že je zmatené
+  - Kdybych to chtěl řešit, musle bych naimplementovat vracení moves (nebo
+    aspoň vracení tahů)
 
 
 Todo:
 x Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
-- Cleanup
-  - Věci, co už mám zapsané
-  - Hledat v kódu TODOs a DEBUGs
+x Cleanup
 - Dokumentace
   - Uživatelská
   - Programátorská
@@ -252,22 +254,6 @@ x Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi
 - ? Ozkoušet na různých rozlišeních ?
 - Playtesting (můžu jako prokrastinaci při učení)
 - Odevzdat
-
-cleanup:
-x Winning screen větší písmena
-x Hezčí počet zbývajících karet
-x AI přistupuje k _atributům
-- is_valid_stack nějak chytřeji
-- Žádné missing cards
-
-optional:
-x Dát AI jméno
-x Chytřejší načítání karet (mohl bych do konstanty dát format string)
-- AI panic
-- je takové nehezké mít uloženo "is frozen" v Card, což má být classa
-  nepatřící do ui, logiky ani ai
-- Replay AI moves
-- Restorenout "tohle je karta, don't question"
 
 ---
 
