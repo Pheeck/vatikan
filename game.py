@@ -135,6 +135,14 @@ class Game:
         self.win_screen.blit(s, (x, y))
 
     def end_turn(self):
+        """
+        End turn
+
+        Checks if the current hand isn't empty, possibly choosing the current
+        player as winner. Then switches the players. Finally, freezes cards on
+        the board.
+        """
+
         if self.pickup.has_card():
             card = self.pickup.pop()
             self.hand.add(card)
@@ -150,25 +158,20 @@ class Game:
             self.player = 1
             self.pickup = self.pickup1
             self.hand = self.hand1
+        self.end_turn_button.set_player(self.player)
+        print(f"\nPlayer {self.player}")
 
         # Freeze all cards on the board
         for stack in self.stacks:
             stack.freeze()
-
-        self.end_turn_button.set_player(self.player)
-        print(f"\nPlayer {self.player}") # DEBUG
 
     def update_end_turn_button(self):
         if self.board_is_valid():
             self.end_turn_button.set_board_valid()
         else:
             self.end_turn_button.unset_board_valid()
-        if self.board_is_frozen():
-            if self.deck.is_empty():
-                self.end_turn_button.unset_card_draw_needed()
-                self.end_turn_button.unset_board_valid()
-            else:
-                self.end_turn_button.set_card_draw_needed()
+        if self.board_is_frozen() and not self.deck.is_empty():
+            self.end_turn_button.set_card_draw_needed()
         else:
             self.end_turn_button.unset_card_draw_needed()
 
@@ -191,15 +194,12 @@ class Game:
                     # Draw a card first
                     card = self.deck.pop()
                     self.hand.add(card)
-                    self.end_turn()
-                    self.update_end_turn_button()
-                    return True
-                else:
-                    return False
+                self.end_turn()
+                self.update_end_turn_button()
             else:
                 self.end_turn()
                 self.update_end_turn_button()
-                return True
+            return True
         return False
 
     def try_take_card_from_stack(self, card, stack):
