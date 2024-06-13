@@ -106,6 +106,8 @@ class Game:
         valid = True
         for stack in self.stacks:
             valid &= stack.is_valid()
+        if self.pickup.has_card():
+            valid &= not self.pickup.get().is_frozen()
         return valid
 
     def board_is_frozen(self):
@@ -120,7 +122,7 @@ class Game:
 
     def select_winner(self, player):
         self.winner = player
-        s = self.big_font.render(f"PLAYER {player} WON", True, TEXT_COLOR)
+        s = self.big_font.render(f"HRAC {player} VYHRAL", True, TEXT_COLOR)
         x = self.screen.get_width() / 2 - s.get_width() / 2
         y = self.screen.get_height() / 2 - s.get_height() / 2
         self.win_screen.blit(s, (x, y))
@@ -182,8 +184,15 @@ class Game:
         - The current player draws a card and the turn ends
         - The turn doesn't end
 
+        If there is a card in pickup area, we put it into the hand. If that
+        isn't possible, the turn cannot end.
+
         If the turn ends, return True, otherwise return False
         """
+        if self.pickup.has_card():
+            if not self.try_put_card_into_hand():
+                return False
+
         if self.board_is_valid():
             if self.board_is_frozen():
                 if not self.deck.is_empty():

@@ -243,17 +243,18 @@ x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
   - Kdybych to chtěl řešit, musle bych naimplementovat vracení moves (nebo
     aspoň vracení tahů)
 
+- Začínám psát dokumentaci
+
 
 Todo:
 x Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
 x Cleanup
-- Dokumentace
-  - Uživatelská
-  - Programátorská
-- ? Mít verzi freeznutou pro windows ?
-- ? Ozkoušet na různých rozlišeních ?
-- Playtesting (můžu jako prokrastinaci při učení)
-- Odevzdat
+x ? Mít verzi freeznutou pro windows ?
+x Dokumentace
+- Překontrolovat dokumentaci
+- Odevzdat (po nějakém prokrastinace playtestingu)
+  - Hodit release na github
+  - Poslat email
 
 ---
 

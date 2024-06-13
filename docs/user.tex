@@ -1,0 +1,128 @@
+\documentclass{article}
+
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{csquotes}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+
+\graphicspath{{./}}
+
+\title{Manuál ke karetní počítačové hře Vatikán}
+
+\begin{document}
+
+\maketitle
+
+\section*{Co to je}
+
+Tento dokument je manuál k počítačové verzi karetní hry Vatikán. Hra (popř.
+její varianty) je také známá pod názvy Autobus nebo Amerika. Počítačová hra by
+měla být hratelná na MS Windows nebo na vesměs libovolné distribuci Linuxu.
+
+\section*{Jak to spustit}
+
+\subsection*{Windows}
+
+Je-li váš operační systém Windows, lze hru spustit jednoduše poklepáním na
+spustitelný soubor \texttt{vatikan.exe}.
+
+Následně by se mělo otevřít okno se hrou zobrazující hlavní menu, nápis
+\emph{Karetni hra VATIKAN} a tři tlačítka odpovídající herním režimům.
+
+\subsection*{Linux a pokročilí uživatelé Windows}
+
+Zde je alternativní způsob, jak hru spustit. Tento způsob funguje pro Linux i
+Windows. Je třeba mít nainstalovaný interpret Python~3 a knihovnu Pygame 2.
+Během vývoje jsem používal Python 3.12.3 a Pygame 2.5.2.
+
+Ve složce se hrou spusťte příkaz
+
+\begin{verbatim}
+	python3 __main__.py
+\end{verbatim}
+
+\section*{Jak to hrát}
+
+\subsection*{Po spuštění}
+
+Hra se ovládá výhradně myší. Po spuštění hry se dostanete do hlavního menu, kde
+dostanete na výběr ze tří herních režimů
+\begin{itemize}
+	\item Hráč proti hráči -- Střídají se tahy dvou hráčů. Lze hrát sám
+		proti sobě. Lze hrát u jednoho počítače ve dvou. Karty obou
+		hráčů jsou stále odkryté. Co se týče herní plochy, hráč 1 je
+		dole, hráč 2 je nahoře.
+	\item Hráč proti AI -- Střídá se hráč a počítač. Karty počítače jsou
+		zakryté. Počítač předstírá, že karty hráče nezná. Hráč je dole,
+		počítač je nahoře.
+	\item AI proti AI -- Počítač hraje sám proti sobě. V tomto režimu nelze
+		s herní plochou interagovat. Režim primárně určený k testování
+		hry.
+\end{itemize}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[height=150px]{main-menu.png}
+	\end{center}
+\end{figure}
+
+Herní režim zvolíte klepnutím myší na odpovídající tlačítko. Zbytek manuálu
+bude předpokládat, že jste zvolili režim \enquote{Hráč proti AI}.
+
+\subsection*{Přesouvání karet}
+
+Nyní byste měli mít před sebou herní plochu a karty ve svojí ruce. Kliknutím na
+kartu ji zvolíte. Zvolená karta se vždy nachází v levém dolním rohu obrazovky.
+Pokud máte zvolenou nějakou kartu, můžete ji kliknutím na ruku vrátit zpět do
+ruky nebo ji můžete klepnutím na některé z míst na stole vyložit na stůl.
+Založíte tak novou hromádku. Další karty můžete vykládat na volná místa nebo
+přikládat na existující hromádky. Lze zvolit nejen karty z ruky, ale také
+karty, které již leží na stole v některé z hromádek.
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[height=150px]{moving-cards.png}
+	\end{center}
+\end{figure}
+
+\subsection*{Cíl hry a správné hromádky}
+
+Cílem hry je zbavit se všech karet v ruce a ukončit tah. Avšak tah lze ukončit
+pouze pokud všechny hromádky na stole jsou \enquote{správné}. Správná hromádka
+je buď \enquote{postupka}, kde navazují hodnosti a karty mají stejnou barvu,
+nebo \enquote{trojice/čtveřice}, kde hodnost je stejná a karty mají různé
+barvy. Pořadí karet v postupce je \texttt{2 3 4 5 6 7 8 9 10 J K Q A} a
+postupka je chápána cyklicky, tedy po \texttt{A} následuje \texttt{2}. Každá
+správná hromádka má alespoň 3 karty a neobsahuje jednu kartu dvakarát. Když
+hromádka není správná, zbarví se dočervena.
+
+Tah můžete ukončit tak, že klepnete na tlačítko nacházející se vpravo uprostřed
+okna pod obrázkem dobíracího balíčku. Pokud některá hromádka není správná,
+tlačítko nebude funkční. Pokud jste za tah nevynesli žádnou kartu z ruky,
+s koncem tahu si automaticky doberete kartu z dobíracího balíčku.
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[height=150px]{ending-turn.png}
+	\end{center}
+\end{figure}
+
+\subsection*{Zmražené karty}
+
+Karty z minulých tahů je zakázáno brát do ruky. Není možné ukončit tah, pokud
+je zvolena některá z těchto karet.
+
+\section*{Poděkování/Acknowledgements}
+
+Rád bych poděkoval uživateli \texttt{yaomon} stránky \texttt{itch.io}, jehož
+obrázky jsem použil jako obrázky karet v této hře.
+
+I'd like to give credit to user \texttt{yaomon} of the website \texttt{itch.io}
+whose artwork I used as assets in this game.
+
+\url{https://yaomon.itch.io/playing-cards}
+
+\end{document}

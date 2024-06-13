@@ -43,6 +43,7 @@ if __name__ == "__main__":
             )
 
     screen = pygame.display.set_mode(SCREEN_SIZE)
+    pygame.display.set_caption(WINDOW_CAPTION)
 
     menu = Menu(screen)
     gamemode = menu.run()

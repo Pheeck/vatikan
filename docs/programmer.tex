@@ -1,0 +1,243 @@
+\documentclass{article}
+
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{csquotes}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{fdsymbol}
+
+\graphicspath{{./}}
+
+\title{Programátorská dokumentace karetní počítačové hry Vatikán}
+
+\begin{document}
+
+\maketitle
+
+\section*{Co to je}
+
+Tento dokument je programátorská dokumentace počítačové verze karetní hry
+Vatikán. Existuje více variant této hry. Naimplementoval jsem variantu, která
+se hraje se dvěma balíčky žolíkových karet ovšem bez žolíků a hráči se střídají
+ve vykládání karet. Naimplementoval jsem pouze hru dvou hráčů. Jeden nebo
+oba hráči mohou být ovládáni jednoduchou umělou inteligencí.
+
+Program jsem vyvíjel s Pythonem 3.12.3 a Pygame 2.5.2 pro Linux a Windows. Pro
+vytvoření samostatné binárky pro Windows jsem použil knihovnu pyinstaller a
+postup popsaný v tomto Stack Overflow příspěvku
+\url{https://stackoverflow.com/a/54926684}. Použil jsem volně dostupné assety
+uživatele yaomon stránky itch.io -- \url{https://yaomon.itch.io/playing-cards}.
+
+\subsection*{Pravidla}
+
+Zde je přehled pravidel hry.
+\begin{itemize}
+	\item Cílem hry je vyložit všechny karty z ruky
+	\item Ve svém tahu může hráč vykládat karty ze svojí ruky na stůl a
+		přemisťovat karty na stole. Nemůže brát karty ze stolu. V
+		počítačové implementaci hry \emph{je} možné brát karty ze
+		stolu, avšak pouze ty, které byly stejné kolo vyloženy.
+		Efektivně to znamená, že hráč v průběhu tahu může vrátit
+		rozhodnutí vyložit kartu, což mu umožňuje lépe tah rozmýšlet.
+	\item Karty na stole mají být uspořádány do \emph{stacků} (hromádek),
+		kde každá hromádka musí být buď \emph{flush} nebo
+		\emph{triplet}, viz sekce Pojmy. Počítačová implementace
+		splnění tohoto pravidla vyžaduje na konci tahu.
+	\item Pokud hráč za svůj tah nevyložil žádnou kartu ze své ruky, musí
+		si před ukončením tahu jednu kartu líznout z dobíracího
+		balíčku.
+\end{itemize}
+
+\section*{Pojmy}
+
+Zde vysvětluji některé pojmy používané v tomto dokumentu a v komentářích v
+kódu.
+
+\begin{itemize}
+	\item Frozen karta -- Karta, která nezačínala tento tah v ruce. Nelze
+		ji vzít do ruky. Pokud všechny karty na stole jsou frozen, je
+		stůl považován za frozen. Frozen stůl znamená dolíznutí karty
+		při ukončení tahu.
+	\item Stack (hromádka) -- Skupina (může být prázdná) karet (třída
+		\texttt{Card}). Stack může být reprezentován třídou
+		\texttt{Stack} nebo jednodušeji pouze tuplem (v případě modulu
+		\texttt{ai}).
+	\item Validní stack -- Buď prázdný stack nebo stack obsahující flush
+		nebo triplet.
+	\item Cyclic order -- Uspořádání karet dle hodností takové, že po
+		nejvyšší kartě následuje nejnižší. Např. posloupnosti \texttt{4
+		5 6}, \texttt{10 J Q K} a \texttt{Q K A 2 3} mají cyclic order.
+	\item Flush (postupka) -- Skupina alespoň 3 karet jedné barvy, které
+		lze uspořádat do cyclic orderu. Žádná z karet se nesmí
+		opakovat. Např. \texttt{A 2 3} je flush, \texttt{4 5} a
+		\texttt{2 3 9 10} nikoliv.
+	\item Triplet -- Skupina alespoň 3 karet stejné hodnosti. Žádná z karet
+		se nesmí opakovat. Pozorujme, že tedy triplet může mít jedině 3
+		nebo 4 karty. Např. \texttt{$\clubsuit$Q $\diamondsuit$Q
+		$\heartsuit$Q}.
+	\item Widget -- Objekt třídy z modulu \texttt{widgets}. Reprezentuje
+		nějakou část uživatelského rozhraní a zároveň logiky hry. Více
+		viz sekce Třídy v modulu \texttt{widgets}.
+	\item Missing marker -- Značka (reprezentována hodnotou \texttt{None})
+		signalizující, že skupina karet téměř tvoří \emph{flush},
+		avšak na místě značky chybí karta. Missing markerů ve skupině
+		karet může být více. Koncept missing markerů je v programu
+		přítomen hlavně z estetických důvodů. Slouží k tomu, aby
+		uživatelské rozhraní mohlo dát lépe najevo, že hromádka je
+		téměř validní. Algoritmus pro testování validity \emph{flushe}
+		běžně vrací tuply obsahující missing markery. Např. \texttt{K A
+		2 None 3 4}.
+\end{itemize}
+
+\section*{Jak to funguje}
+
+\subsection*{O co se stará která třída / modul}
+
+\subsubsection*{Třída \texttt{Card}}
+
+Všechny karty jsou reprezentovány třídou \texttt{Card}. Každá karta je
+vytvořena za běh programu pouze při incializaci třídy \texttt{Game}. Poté již
+objekty třídy \texttt{Card} nevznikají ani nezanikají. Kartě je možné nastavit
+příznak \emph{frozen}. To se u každé karty stane nejvýše jednou za hru a
+příznak už není možné odebrat.
+
+\subsubsection*{Třída \texttt{Game}}
+
+Třída \texttt{Game} je hlavní třídou programu. Instanciuje se za jeho běh pouze
+jednou. Vlastní veškeré \emph{widgety} a společně s nimi reprezentuje stav hry.
+Její metoda \texttt{run} obsahuje hlavní cyklus hry. Veškeré změny stavu hry se
+dějí skrz \enquote{API} tvořené metodami
+\begin{verbatim}
+try_end_turn
+try_take_card_from_stack
+try_take_card_from_hand
+try_put_card_onto_stack
+try_put_card_into_hand
+find_stack_containing_cards
+get_random_empty_stack
+get_state_copy
+\end{verbatim}
+Tyto metody využívá jak metoda \texttt{Game.process\_mouse\_click}, starající
+se o zpracování příkazů od uživatele, tak funkce \texttt{ai.apply\_moves} z
+modulu \texttt{ai} starající se o zpracování příkazů umělé inteligence.
+
+\subsubsection*{Třídy v modulu \texttt{widgets}}
+
+Logika hry je implementována částečně ve třídě \texttt{Game} a částečně ve
+\emph{widgetech}. Ty jsou zároveň schopné vykreslit se na obrazovku a
+odpovídat, jestli na ně bylo kliknuto.
+
+Třída \texttt{Stack} reprezentuje stack karet. Dokáže odpovídat na otázku,
+jestli je validní. Udržuje si seznam karet dvakrát -- jednou bez \emph{missing
+markerů} a jednou s nimi. Třída \texttt{Hand} reprezentuje karty v ruce hráče.
+Ve hře je vždy instanciovaná dvakrát -- pro každého z hráčů. Widgety třídy
+\texttt{PickUpArea} zobrazují, která karta je právě zvolena. Přesouvání karty
+probíhá následovně. Karta je nejprve zvolena, čímž opustí stack/ruku. V tu
+chvíli objekt karty vlastní pickup widget. Poté je zvolená karta umístěna do
+ruky nebo do nějakého stacku. Tyto akce probíhají pomocí API třídy
+\texttt{Game}. \texttt{PickUpArea} je také vždy instanciována dvakrát. Třída
+\texttt{Deck} reprezentuje dobírací balíček. Vlastní karty, které ještě nejsou
+ve hře. Zobrazuje počet karet v dobíracím balíčku. Třída \texttt{EndTurnButton}
+umožňuje uživateli ukončit kolo a zobrazuje stav stolu. Napovídá, jestli
+všechny stacky jsou validní a tedy je možné kolo ukončit a jestli na stole leží
+pouze \emph{frozen} karty, tedy ukončení kola znamená dolíznutí karty.
+
+\subsubsection*{Modul \texttt{ai}}
+
+Modul \texttt{ai} obsahuje tři hlavní funkce \texttt{generate\_moves},
+\texttt{print\_moves} a \texttt{apply\_moves}. Funkce \\ \texttt{generate\_moves}
+si zkopíruje stav hry, použije algoritmus, který popisuji v sekci Umělá
+inteligence a vydá informace o moves (přesunech karet), které umělá inteligence
+vyhodnotila jako nejlepší. Funkce se dívá pouze na možnosti v rámci jednoho
+tahu. Nijak nebere v úvahu budoucí tahy svoje ani protivníkovy. Funkce
+\texttt{print\_moves} vypisuje moves do terminálu v lidsky čitelné podobě.
+Funkce \texttt{apply\_moves} za pomocí API třídy \texttt{Game} moves aplikuje.
+
+\subsubsection*{Třída \texttt{Menu}}
+
+Třída \texttt{Menu} reprezentuje výběr z herních režimů, který se ukáže
+uživateli po spuštění programu. Instanciuje se pouze jedenkrát za běh programu.
+Má vlastní hlavní cyklus. Když uživatel zvolí herní režim, hlavní cyklus třídy
+skončí a incializuje se třída \texttt{Game} s herním režimem jako jedním z
+argumentů.
+
+\subsection*{Algoritmy}
+
+\subsubsection*{Je toto flush?}
+
+Pojďme teď rozebrat algoritmus vyhodnocující, jestli daná skupina karet tvoří
+\emph{flush}. Protože rozpoznat validní triplet je snadné, tento algoritmus je
+jedinou netriviální částí rozpoznávání validního \emph{stacku}.
+
+Algoritmus nejprve zkontroluje, že skupina obsahuje alespoň 3 karty, všechny
+mají stejnou barvu a žádná není ve stacku dvakrát (kouká, jestli skupina
+obsahuje unikátní ranky). Zásadní myšlenka algoritmu je, že dovolíme přidávat
+\emph{missing markery} na místa karet, která ve \emph{flushi} chybí. Pokud jsme
+splnili iniciální podmínky, je už v tuto chvíli jisté, že \emph{flush} (ač
+možná s \emph{missing markery}) dokážeme sestrojit. Nyní algoritmus buď vydá
+skupinu bez \emph{missing markerů} a my víme, že máme \emph{flush} a nebo vydá
+setříděnou skupinu s \emph{missing markery}, což znamená, že vstup neobsahoval
+\emph{flush} a zároveň signalizuje, jaké karty je třeba přidat.
+
+Ovšem my budeme od algoritmu požadovat ještě jednu dodatečnou vlastnost --
+chceme, aby algoritmus umístil nejmenší možný počet \emph{missing markerů}.
+Seřadíme si karty podle ranků. Některé ranky typicky nebudou přítomné. Najdeme
+nejdelší souvislý úsek chybějících ranků -- největší mezeru. Zrotujeme
+posloupnost karet tak, aby tato mezera byla \enquote{na vnějšku} -- aby byla
+mezi posledním a prvním prvkem. Nyní iterujeme od ranku první karty
+posloupnosti po rank poslední karty z posloupnosti. Pokud rank v posloupnosti
+je, vydáme odpovídající kartu. Pokud ne, vydáme missing marker. Tudíž vyplníme
+všechny mezery kromě té největší. Nejvýše jedna mezera již znamená, že máme
+\emph{flush}. Protože nevyplněná zůstala největší mezera, použili jsme nejmenší
+možný počet \emph{missing markerů}.
+
+\subsubsection*{Umělá inteligence}
+
+Nyní rozeberme, jak umělá inteligence určuje, které tahy provést. Můj původní
+plán byl prohledávat stavový prostor a ze stavů, kde všechny stacky jsou
+validní vybrat ten, který znamená nejvíce vyložených karet. Ovšem prvotní
+pokusy odhalily, že vzhledem k počtu možných přesunutí karet je prohledávání
+stavového prostoru výpočetně extrémně náročné a tedy není praktickým řešením.
+
+Zvolil jsem tedy alternativní přístup, kde neuvažuji všechny možnosti, jak
+vyložit karty na stůl. Uvažuji pouze ty možnosti, o kterých jsem empiricky
+zjistil, že je hráči hry dělají nejčastěji. Tedy implementace umělé inteligence
+zkouší tyto moves
+\begin{enumerate}
+	\item Vytvoř nový stack o třech kartách
+		\begin{enumerate}
+			\item Použij výhradně karty z ruky
+			\item Použij jednu krajovou kartu z některého velkého
+				stacku. Velký stack má alespoň 4 karty. Např.
+				ze stacku \texttt{$\heartsuit$4 $\heartsuit$5
+				$\heartsuit$6 $\heartsuit$7} vezmi kartu
+				\texttt{$\heartsuit$7}.
+			\item Použij dvě krajové karty z některých velkých
+				stacků
+		\end{enumerate}
+	\item Přilož kartu z ruky k existujícímu stacku
+\end{enumerate}
+Pro jednoduchost implementace jsem možnost 1c dále omezil tím, že neuvažuji
+odebrání dvou karet z jednoho stacku (což by u stacku o alespoň pěti kartách
+bylo možné se zachováním jeho validity). Algoritmus nejprve zkouší aplikovat
+moves typu 1a dokud se nepřesvědčí, že žádný další aplikovat nelze, poté 1b, 1c
+a nakonec 2.
+
+Tento přístup se osvědčil. Vzhledem k jeho jednoduchosti dává překvapivě
+kompetentního, ač docela slabého, automatického protivníka. Navíc výsledný
+algoritmus je polynomiální a běží dost rychle na to, aby prodleva
+\enquote{přemýšlení} umělé inteligence byla prakticky nepostřehnutelná.
+
+Algoritmus oproti lidskému hráči selhává v situacích, kdy už v ruce má velice
+málo karet -- jednu nebo dvě. Tehdy typicky standardní moves nejsou k dispozici
+a umělá inteligence tedy neví, co dělat. Lidský hráč v tu chvíli rozšíří
+množinu moves, nad kterou uvažuje a je ochotný strávit delší čas přemýšlením
+nad tím, jak přeskládat hromádky na stole, aby mohl své poslední karty vynést.
+Potencionální zlepšení umělé inteligence by mohlo být přece jen se u konce hry
+obrátit na nějaké vhodně omezené prohledávání stavového prostoru -- mimikovat
+chování člověka.
+
+\end{document}

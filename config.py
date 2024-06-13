@@ -8,7 +8,7 @@ This file contains global constants.
 COLORS = ("heart", "clover", "spade", "diamond")
 RANKS = ("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A")
 STARTING_HAND_NUM_CARDS = 12
-AI_VS_AI_TURN_DELAY = 100
+AI_VS_AI_TURN_DELAY = 1000
 
 # Gamemode constants
 PLAYER_VS_PLAYER = 0
@@ -18,6 +18,7 @@ AI_VS_AI = 2
 # General graphics
 SCREEN_SIZE = (1440, 900)
 FPS = 30
+WINDOW_CAPTION = "Vatikan"
 
 # UI colors
 BG_COLOR = "0x005500"

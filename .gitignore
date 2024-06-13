@@ -1,6 +1,7 @@
 env/*
-cards/*
-cards2/*
-karta.png
-back.png
+*.pdf
+*.aux
+*.log
+*.out
 __pycache__
+*.png
