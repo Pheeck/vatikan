@@ -5,3 +5,5 @@ env/*
 *.out
 __pycache__
 *.png
+highscore
+windows/*

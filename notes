@@ -246,6 +246,25 @@ x AI nepotřebuje stacky seřazené. Potřebuje stacky seřazené podle gapu.
 - Začínám psát dokumentaci
 
 
+24/06/19
+
+git repo
++ README
+
+linux release
++ cards
++ docs/obrázky
++ user.pdf
++ programmer.pdf
+- notes
+- ai.py.bak
+
+windows release
+. všechno, co je v linux release
++ binárka
+. tohle pak schovám na google drive a odevzdám
+
+
 Todo:
 x Obrazovka "člověk proti člověku / člověk proti botovi / bot proti botovi"
 x Cleanup
@@ -253,7 +272,7 @@ x ? Mít verzi freeznutou pro windows ?
 x Dokumentace
 - Překontrolovat dokumentaci
 - Odevzdat (po nějakém prokrastinace playtestingu)
-  - Hodit release na github
+  - Hodit release na github + README
   - Poslat email
 
 ---
